@@ -38,7 +38,7 @@ class VentaController extends Controller
 
     public function store(VentaRequest $request){
         $data = $request->validated();
-        $data["id_usuario_registro"] = $request->user->id;
+        $data["id_usuario_registro"] = auth()->user()->id;
 
         DB::beginTransaction();
         $venta = (new VentaService)->registrar($data);

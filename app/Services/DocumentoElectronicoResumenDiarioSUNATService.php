@@ -11,8 +11,14 @@ use Illuminate\Support\Facades\DB;
 
 class DocumentoElectronicoResumenDiarioSUNATService {
     private $CODIGO_COMPROBANTE = "RC";
-    private $RUTA_SISTEMA_FACTURACION_ENVIAR = "http://localhost/andreitababy-facturacion/api/xml.enviar.comprobante.resumen.php";
-    private $RUTA_SISTEMA_FACTURACION_CONSULTAR_TICKET_RD = "http://localhost/andreitababy-facturacion/api/xml.consultar.ticket.rd.php";
+    private $RUTA_SISTEMA_FACTURACION_ENVIAR;
+    private $RUTA_SISTEMA_FACTURACION_CONSULTAR_TICKET_RD;
+
+    function __construct(){
+        $API_FACTURACION = config('globals.api_facturacion');
+        $this->RUTA_SISTEMA_FACTURACION_ENVIAR = $API_FACTURACION."xml.enviar.comprobante.resumen.php";
+        $this->RUTA_SISTEMA_FACTURACION_CONSULTAR_TICKET_RD = $API_FACTURACION."xml.consultar.ticket.rd.php";
+    }
 
     private function obtenerDatosParaEnviar(string $id){
         $rd =  DocumentoElectronicoResumenDiario::where([
@@ -220,6 +226,7 @@ class DocumentoElectronicoResumenDiarioSUNATService {
                             ->where('id_documento_electronico_resumen_diario', $idRD);
                     })->update([
                         'cdr_estado' => '0',
+                        'enviar_a_sunat'=>'1',
                         "cdr_descripcion" => DB::raw("CONCAT('La ',
                             CASE
                             WHEN id_tipo_comprobante = '03' THEN CONCAT('Boleta de Venta número ', serie,'-',LPAD(correlativo,6,'0'))

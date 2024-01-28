@@ -7,10 +7,14 @@ use App\Models\EmpresaFacturacion;
 use Illuminate\Support\Facades\DB;
 
 class DocumentoElectronicoResumenDiarioXMLService {
-    private $CODIGO_COMPROBANTE = "RC";
-    private $RUTA_SISTEMA_FACTURACION = "http://localhost/andreitababy-facturacion/api/xml.generar.comprobante.php";
-    private $RUTA_SISTEMA_FACTURACION_FIRMADO = "http://localhost/andreitababy-facturacion/api/xml.firmar.comprobante.php";
-    //private $RUTA_SISTEMA_FACTURACION_ENVIAR = "http://localhost/andreitababy-facturacion/api/xml.enviar.comprobante.facturas.php";
+    private $RUTA_SISTEMA_FACTURACION;
+    private $RUTA_SISTEMA_FACTURACION_FIRMADO;
+
+    function __construct(){
+        $API_FACTURACION = config('globals.api_facturacion');
+        $this->RUTA_SISTEMA_FACTURACION = $API_FACTURACION."xml.generar.comprobante.php";
+        $this->RUTA_SISTEMA_FACTURACION_FIRMADO = $API_FACTURACION."xml.firmar.comprobante.php";
+    }
 
     private function obtenerDatosParaCreacionXML(String $id){
         $rd = DocumentoElectronicoResumenDiario::with([

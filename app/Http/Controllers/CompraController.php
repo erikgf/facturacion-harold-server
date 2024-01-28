@@ -37,7 +37,7 @@ class CompraController extends Controller
 
     public function store(CompraRequest $request){
         $data = $request->validated();
-        $data["id_usuario_registro"] = $request->user->id;
+        $data["id_usuario_registro"] = auth()->user()->id;
 
         DB::beginTransaction();
         $compra = (new CompraService)->registrar($data);
