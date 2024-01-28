@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DocumentoElectronico;
 use App\Models\User;
 use App\Services\DocumentoElectronicoService;
+use App\Services\DocumentoElectronicoXMLService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -90,15 +91,15 @@ class DocumentoElectronicoController extends Controller
     }
 
     public function generarComprobanteXML(string $id){
-        return (new DocumentoElectronicoService)->generarComprobanteXML($id);
+        return (new DocumentoElectronicoXMLService)->generarComprobanteXML($id);
     }
 
     public function firmarComprobanteXML(string $id){
-        return (new DocumentoElectronicoService)->firmarComprobanteXML($id);
+        return (new DocumentoElectronicoXMLService)->firmarComprobanteXML($id);
     }
 
     public function generarYFirmarComprobanteXML(string $id){
-        $documentoElectronicoService = new DocumentoElectronicoService;
+        $documentoElectronicoService = new DocumentoElectronicoXMLService;
 
         DB::beginTransaction();
         $generado = $documentoElectronicoService->generarComprobanteXML($id);

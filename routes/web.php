@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\DocumentoElectronico;
+use App\Models\DocumentoElectronicoResumenDiario;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 

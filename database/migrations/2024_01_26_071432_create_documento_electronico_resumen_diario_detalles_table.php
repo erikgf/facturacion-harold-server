@@ -20,9 +20,9 @@ return new class extends Migration
             $table->integer("correlativo_comprobante");
             $table->char("id_tipo_documento_cliente", 1);
             $table->string("numero_documento_cliente", 15);
-            $table->char("id_tipo_comprobante_modificado", 2);
-            $table->char("serie_comprobante_modificado", 4);
-            $table->integer("correlativo_comprobante_modificado");
+            $table->char("id_tipo_comprobante_modificado", 2)->nullable();
+            $table->char("serie_comprobante_modificado", 4)->nullable();
+            $table->integer("correlativo_comprobante_modificado")->nullable();
             $table->smallInteger("status")->default(1)->comment("1: ADD, 2: MOD, 3: ANULAR");
             $table->char("id_tipo_moneda");
             $table->decimal("importe_gravadas", 12,2);

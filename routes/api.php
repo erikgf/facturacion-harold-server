@@ -5,6 +5,7 @@ use App\Http\Controllers\CategoriaProductoController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\DocumentoElectronicoController;
+use App\Http\Controllers\DocumentoElectronicoResumenDiarioController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\PermisoRolController;
@@ -65,6 +66,14 @@ Route::group(["middleware"=>['auth:sanctum']], function(){
         Route::get("generar-xml/{id}", [DocumentoElectronicoController::class, "generarComprobanteXML"]);
         Route::get("firmar-xml/{id}", [DocumentoElectronicoController::class, "firmarComprobanteXML"]);
         Route::get("generar-firmar-xml/{id}", [DocumentoElectronicoController::class, "generarYFirmarComprobanteXML"]);
+    });
+
+    Route::apiResource("resumenes-diarios", DocumentoElectronicoResumenDiarioController::class);
+    Route::prefix("resumenes-diarios")->group(function(){
+        Route::get("comprobantes-fecha/{fecha}", [DocumentoElectronicoResumenDiarioController::class, "obtenerComprobantesPorFecha"]);
+        Route::post("enviar/{id}", [DocumentoElectronicoResumenDiarioController::class, "enviarSUNAT"]);
+        Route::post("ticket/{id}", [DocumentoElectronicoResumenDiarioController::class, "consultarTicket"]);
+        Route::post("generar-xml/{id}", [DocumentoElectronicoResumenDiarioController::class, "generarXML"]);
     });
 
     Route::apiResource("compras", CompraController::class);
