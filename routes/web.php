@@ -2,6 +2,7 @@
 
 use App\Models\DocumentoElectronico;
 use App\Models\DocumentoElectronicoResumenDiario;
+use App\Services\VentaReportesService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -15,8 +16,6 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
-
 
 Route::get('/cleareverything', function () {
     $clearcache = Artisan::call('cache:clear');
@@ -33,5 +32,6 @@ Route::get('/cleareverything', function () {
 });
 
 Route::get('/', function () {
+    (new VentaReportesService)->test();
     return view('welcome');
 });

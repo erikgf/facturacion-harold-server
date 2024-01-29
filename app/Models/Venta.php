@@ -14,6 +14,10 @@ class Venta extends Model
         return $this->hasOne(Cliente::class, "id", "id_cliente");
     }
 
+    public function sucursal(){
+        return $this->hasOne(Sucursal::class, "id", "id_sucursal");
+    }
+
     public function detalle(){
         return $this->hasMany(VentaDetalle::class, "id_venta", "id");
     }

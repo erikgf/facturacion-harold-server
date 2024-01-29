@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AlmacenController;
+use App\Http\Controllers\AlmacenReportesController;
 use App\Http\Controllers\CategoriaProductoController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CompraController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\TipoCategoriaController;
 use App\Http\Controllers\UnidadMedidaController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\VentaController;
+use App\Http\Controllers\VentaReportesController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,7 +33,6 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post("sesion/iniciar", [SesionController::class, "login"]);
-
 
 Route::group(["middleware"=>['auth:sanctum']], function(){
     Route::apiResource("unidad-medidas", UnidadMedidaController::class);
@@ -78,6 +79,14 @@ Route::group(["middleware"=>['auth:sanctum']], function(){
 
     Route::apiResource("compras", CompraController::class);
     Route::apiResource("ventas", VentaController::class);
+    Route::prefix("ventas-reportes")->group(function(){
+        Route::get("general", [VentaReportesController::class, "obtenerGeneral"]);
+        Route::get("mas-vendido", [VentaReportesController::class, "obtenerMasVendido"]);
+    });
+    Route::prefix("almacen-reportes")->group(function(){
+        Route::get("stock", [AlmacenReportesController::class, "obtenerStock"]);
+        Route::get("kardex", [AlmacenReportesController::class, "obtenerKardex"]);
+    });
 
     Route::post("sesion/cerrar", [SesionController::class, "logout"]);
     Route::get("permisos-usuario", [PermisoRolController::class, "obtenerPermisos"]);
