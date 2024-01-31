@@ -33,7 +33,7 @@ class DocumentoElectronicoService {
 
         $doc->fecha_emision = $data["fecha_emision"];
         $doc->fecha_vencimiento = @$data["fecha_vencimiento"] ?: $data["fecha_emision"];
-        $doc->hora_emision = $data["hora_venta"];
+        $doc->hora_emision = $data["hora_venta"].":00";
         $doc->id_tipo_moneda = $data["id_tipo_moneda"];
 
         $esDocumentoElectronicoCredito = $data['monto_credito'] > 0.00;
@@ -86,8 +86,9 @@ class DocumentoElectronicoService {
             }
 
             $subTotal = round($productoDetalle["precio_unitario"] * $productoDetalle["cantidad"], 3);
-            $valorVentaUnitario = round($subTotal / (1 + $this->IGV), 2);
-            $totalIgv = $subTotal - $valorVentaUnitario;
+            $valorVentaUnitario = round($productoDetalle["precio_unitario"] / (1 + $this->IGV), 2);
+            $valorVenta =  $valorVentaUnitario * $productoDetalle["cantidad"];
+            $totalIgv = $subTotal - $valorVenta;
 
             $docDetalle = new DocumentoElectronicoDetalle;
             $docDetalle->id_documento_electronico = $doc->id;
@@ -99,6 +100,7 @@ class DocumentoElectronicoService {
             $docDetalle->precio_venta_unitario = $productoDetalle["precio_unitario"];
             $docDetalle->subtotal = $subTotal;
             $docDetalle->valor_venta_unitario = $valorVentaUnitario;
+            $docDetalle->valor_venta = $valorVenta;
             $docDetalle->total_igv = $totalIgv;
             $docDetalle->id_tipo_afectacion = "10";
             $docDetalle->id_codigo_precio = "01";

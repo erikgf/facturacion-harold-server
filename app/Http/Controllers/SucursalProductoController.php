@@ -22,6 +22,7 @@ class SucursalProductoController extends Controller
                 ->join("marcas as m", function($q){
                     $q->on("m.id","=","p.id_marca");
                 })
+                ->whereNull("p.deleted_at")
                 ->groupBy("p.id", "p.codigo_generado", "p.precio_unitario", "p.nombre", "cp.id_tipo_categoria", "m.nombre","p.id_categoria_producto")
                 ->select('p.id', "p.codigo_generado", 'p.precio_unitario', DB::raw('COALESCE(SUM(sp.stock),0) AS stock'), 'p.nombre as nombre_producto', 'm.nombre as marca', 'cp.id_tipo_categoria', 'p.id_categoria_producto as id_categoria')
                 ->get();
@@ -43,6 +44,7 @@ class SucursalProductoController extends Controller
                 ->join("marcas as m", function($q){
                     $q->on("m.id","=","p.id_marca");
                 })
+                ->whereNull("p.deleted_at")
                 ->groupBy("p.id","p.codigo_generado",  "p.precio_unitario", "p.nombre", "cp.id_tipo_categoria", "m.nombre","p.id_categoria_producto","sp.fecha_vencimiento", "sp.lote")
                 ->select('p.id', "p.codigo_generado", 'p.precio_unitario', DB::raw('COALESCE(SUM(sp.stock),0) AS stock'), 'p.nombre as nombre_producto', 'm.nombre as marca', 'cp.id_tipo_categoria', 'p.id_categoria_producto as id_categoria',
                             DB::raw("COALESCE(sp.fecha_vencimiento,'0000-00-00') AS fecha_vencimiento"),

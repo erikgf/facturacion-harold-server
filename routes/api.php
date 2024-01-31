@@ -64,9 +64,10 @@ Route::group(["middleware"=>['auth:sanctum']], function(){
 
     Route::prefix("comprobantes/")->group(function(){
         Route::get("generacion", [DocumentoElectronicoController::class, "obtenerComprobantesParaGeneracion"]);
-        Route::get("generar-xml/{id}", [DocumentoElectronicoController::class, "generarComprobanteXML"]);
-        Route::get("firmar-xml/{id}", [DocumentoElectronicoController::class, "firmarComprobanteXML"]);
-        Route::get("generar-firmar-xml/{id}", [DocumentoElectronicoController::class, "generarYFirmarComprobanteXML"]);
+        Route::post("generar-xml/{id}", [DocumentoElectronicoController::class, "generarComprobanteXML"]);
+        Route::post("firmar-xml/{id}", [DocumentoElectronicoController::class, "firmarComprobanteXML"]);
+        Route::post("generar-firmar-xml/{id}", [DocumentoElectronicoController::class, "generarYFirmarComprobanteXML"]);
+        Route::post("enviar/{id}", [DocumentoElectronicoController::class, "enviarSUNAT"]);
     });
 
     Route::apiResource("resumenes-diarios", DocumentoElectronicoResumenDiarioController::class);

@@ -29,7 +29,7 @@ class SesionController extends Controller
             throw new \Exception("Usuario no válido", 1);
         }
 
-        $token = $user->createToken('andreitakidstoken', ['*'], now()->addDay())->plainTextToken;
+        $token = $user->createToken('andreitakidstoken', ['*'], now()->addWeek())->plainTextToken;
         return [
             'user'=>new UsuarioResource($user),
             'token'=>$token

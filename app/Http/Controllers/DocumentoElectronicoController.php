@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DocumentoElectronico;
 use App\Models\User;
 use App\Services\DocumentoElectronicoService;
+use App\Services\DocumentoElectronicoSUNATService;
 use App\Services\DocumentoElectronicoXMLService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -51,17 +52,18 @@ class DocumentoElectronicoController extends Controller
             "todas_fechas"=>"required|integer"
         ]);
 
-        $docs = DocumentoElectronico::select(
-                    "id",
-                    "id_tipo_comprobante",
-                    "numero_documento_cliente", "descripcion_cliente",
-                    "id_tipo_moneda",
-                    "total_gravadas", "descuento_global", "total_igv", "importe_total", "xml_filename",
-                    "fue_generado","fue_firmado", "cdr_estado",
-                    "enviar_a_sunat",
-                    DB::raw("CONCAT(serie,'-',LPAD(correlativo, 6, '0')) as comprobante"),
-                    DB::raw("DATE_FORMAT(fecha_emision,'%d-%m-%Y') as fecha_emision")
-                );
+        $docs = DocumentoElectronico::whereNull("deleted_at")
+                    ->select(
+                        "id",
+                        "id_tipo_comprobante",
+                        "numero_documento_cliente", "descripcion_cliente",
+                        "id_tipo_moneda",
+                        "total_gravadas", "descuento_global", "total_igv", "importe_total", "xml_filename",
+                        "fue_generado","fue_firmado", "cdr_estado",
+                        "enviar_a_sunat",
+                        DB::raw("CONCAT(serie,'-',LPAD(correlativo, 6, '0')) as comprobante"),
+                        DB::raw("DATE_FORMAT(fecha_emision,'%d-%m-%Y') as fecha_emision")
+                    );
 
         if ($data["todas_fechas"] == 0){
             $docs = $docs->whereBetween("fecha_emision", [$data["fecha_inicio"], $data["fecha_fin"]]);
@@ -110,5 +112,12 @@ class DocumentoElectronicoController extends Controller
             "generado"=>$generado,
             "firmado"=>$firmado
         ];
+    }
+
+    public function enviarSUNAT(string $id){
+        DB::beginTransaction();
+        $doc = (new DocumentoElectronicoSUNATService)->enviarComprobante($id);
+        DB::commit();
+        return $doc;
     }
 }

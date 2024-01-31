@@ -114,7 +114,6 @@ class DocumentoElectronicoResumenDiarioSUNATService {
                 }
             }
         }
-
         return $respuestasEnvio;
     }
 
