@@ -168,7 +168,8 @@ class DocumentoElectronicoXMLService {
             DocumentoElectronico::where(["id"=>$id])
                     ->update([
                         "fue_generado"=>$fue_generado,
-                        "xml_filename"=>$respuesta->ruta."/".$respuesta->xml_filename
+                        "xml_filename"=>$respuesta->ruta."/".$respuesta->xml_filename,
+                        "cdr_estado"=>NULL
                     ]);
         }
 

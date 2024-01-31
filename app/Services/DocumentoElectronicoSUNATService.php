@@ -80,7 +80,6 @@ class DocumentoElectronicoSUNATService {
 
         if ($respuestasEnvio){
             foreach ($respuestasEnvio as $key => $respuesta) {
-                $respuestaOk = isset($respuesta->respuesta) && $respuesta->respuesta === "ok";
                 $numeroEnvios = EnvioComprobanteSunat::where([
                         "id_comprobante_asociado"=>$respuesta->id,
                         "id_tipo_comprobante"=>$respuesta->id_tipo_comprobante
@@ -97,39 +96,37 @@ class DocumentoElectronicoSUNATService {
                 $envioSunat->hash_cdr = $respuesta->hash_cdr;
                 $envioSunat->save();
 
-                if ($respuestaOk){
-                    $codSunat = $respuesta->cod_sunat;
-                    $enviar_a_sunat = "1";
-                    $cdr_descripcion  = $respuesta->mensaje;
-                    $fue_anulado_por_nota = "1";
-                    $estado_anulado = "0";
+                $codSunat = $respuesta->cod_sunat;
+                $enviar_a_sunat = "1";
+                $cdr_descripcion  = $respuesta->mensaje;
+                $fue_anulado_por_nota = "1";
+                $estado_anulado = "0";
 
-                    if ($codSunat < 0){
-                        $enviar_a_sunat = "0";
-                        $cdr_descripcion = "ERROR POR NO CONEXION A SUNAT. REENVIAR XML NUEVAMENTE.";
-                    } else {
-                        if ($codSunat >= 2000){
-                            $enviar_a_sunat = 1;
-                            $estado_anulado = "1";
-                            $fue_anulado_por_nota = "0";
-                            $cdr_descripcion = "RECHAZADO SUNAT: ".$respuesta->mensaje;
-                        } else if ($codSunat > 0 && $codSunat < 2000) {
-                            $enviar_a_sunat = 0;
-                            $cdr_descripcion = "ERROR POR EXCEPCION. GENERAR O REENVIAR XML NUEVAMENTE.";
-                        }
+                if ($codSunat < 0){
+                    $enviar_a_sunat = "0";
+                    $cdr_descripcion = "ERROR POR NO CONEXION A SUNAT. REENVIAR XML NUEVAMENTE.";
+                } else {
+                    if ($codSunat >= 2000){
+                        $enviar_a_sunat = 1;
+                        $estado_anulado = "1";
+                        $fue_anulado_por_nota = "0";
+                        $cdr_descripcion = "RECHAZADO SUNAT: ".$respuesta->mensaje;
+                    } else if ($codSunat > 0 && $codSunat < 2000) {
+                        $enviar_a_sunat = 0;
+                        $cdr_descripcion = "ERROR POR EXCEPCION. GENERAR O REENVIAR XML NUEVAMENTE.";
                     }
-
-                    DocumentoElectronico::where(["id"=>$respuesta->id])
-                        ->update([
-                            "enviar_a_sunat"=>$enviar_a_sunat,
-                            "cdr_estado"=>$codSunat,
-                            "cdr_descripcion"=>$cdr_descripcion,
-                            "cdr_hash"=>$respuesta->hash_cdr,
-                            "cdr_filename"=>$respuesta->xml_cdr,
-                            "fue_anulado_por_nota"=>$fue_anulado_por_nota,
-                            "esta_anulado"=>$estado_anulado
-                        ]);
                 }
+
+                DocumentoElectronico::where(["id"=>$respuesta->id])
+                    ->update([
+                        "enviar_a_sunat"=>$enviar_a_sunat,
+                        "cdr_estado"=>$codSunat,
+                        "cdr_descripcion"=>$cdr_descripcion,
+                        "cdr_hash"=>$respuesta->hash_cdr,
+                        "cdr_filename"=>$respuesta->xml_cdr,
+                        "fue_anulado_por_nota"=>$fue_anulado_por_nota,
+                        "esta_anulado"=>$estado_anulado
+                    ]);
             }
         }
         return $respuestasEnvio;

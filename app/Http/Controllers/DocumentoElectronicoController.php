@@ -52,8 +52,7 @@ class DocumentoElectronicoController extends Controller
             "todas_fechas"=>"required|integer"
         ]);
 
-        $docs = DocumentoElectronico::whereNull("deleted_at")
-                    ->select(
+        $docs = DocumentoElectronico::select(
                         "id",
                         "id_tipo_comprobante",
                         "numero_documento_cliente", "descripcion_cliente",
@@ -61,6 +60,7 @@ class DocumentoElectronicoController extends Controller
                         "total_gravadas", "descuento_global", "total_igv", "importe_total", "xml_filename",
                         "fue_generado","fue_firmado", "cdr_estado",
                         "enviar_a_sunat",
+                        "cdr_descripcion",
                         DB::raw("CONCAT(serie,'-',LPAD(correlativo, 6, '0')) as comprobante"),
                         DB::raw("DATE_FORMAT(fecha_emision,'%d-%m-%Y') as fecha_emision")
                     );
