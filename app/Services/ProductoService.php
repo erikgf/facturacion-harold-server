@@ -22,6 +22,7 @@ class ProductoService {
         $producto = new Producto;
 
         $producto->empresa_especial = $data["empresa_especial"];
+        $producto->codigo_generado = @$data['codigo_unico']?: null;
         $producto->tallas = @$data['tallas']?: null;
         $producto->nombre = $data["nombre"];
         $producto->descripcion = @$data['descripcion']?: null;
@@ -32,8 +33,11 @@ class ProductoService {
         $producto->id_categoria_producto = $data["id_categoria_producto"];
         $producto->numero_imagen_principal = $data["numero_imagen_principal"];
 
-        $codigoGenerado = $this->crearCodigoGenerado($producto);
-        $producto->codigo_generado = $codigoGenerado;
+        if (is_null($producto->codigo_generado)){
+            $codigoGenerado = $this->crearCodigoGenerado($producto);
+            $producto->codigo_generado = $codigoGenerado;
+        }
+
         $producto->save();
 
         if (isset($data["imagenes"])){
@@ -54,6 +58,7 @@ class ProductoService {
 
     public function editar(Producto $producto, array $data){
         $producto->empresa_especial = $data["empresa_especial"];
+        $producto->codigo_generado = @$data['codigo_unico']?: null;
         $producto->tallas = @$data['tallas']?: null;
         $producto->nombre = $data["nombre"];
         $producto->descripcion = @$data['descripcion']?: null;

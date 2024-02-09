@@ -22,7 +22,7 @@ class VentaRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $requestArray = [
             "id_tipo_comprobante"=>"required|string|size:2",
             "serie"=>"required|string|size:4",
             "correlativo"=>[
@@ -32,7 +32,7 @@ class VentaRequest extends FormRequest
                     ->where('id_tipo_comprobante', $this->input('id_tipo_comprobante'))
                     ->where('serie', $this->input('serie')),
             ],
-            "id_cliente"=>"required|integer|exists:clientes,id",
+            "id_cliente"=>"nullable|integer|exists:clientes,id",
             "monto_efectivo"=>"required|numeric|max:".$this->input('importe_total'),
             "monto_tarjeta"=>"required|numeric|max:9999999",
             "monto_credito"=>"required|numeric|max:9999999",
@@ -52,13 +52,30 @@ class VentaRequest extends FormRequest
             "productos.*.cantidad"=>"required|numeric|min:1",
             "productos.*.precio_unitario"=>"required|numeric",
         ];
+
+        if ($this->input('id_cliente') === NULL){
+            $requestArray = array_merge($requestArray, [
+                "cliente_id_tipo_documento"=>"required|string|size:1",
+                "cliente_numero_documento"=>($this->input('cliente_id_tipo_documento') == "0" ? "required" : "nullable")."|string|max:15",
+                "cliente_nombres"=>"required|string|max:300",
+                "cliente_apellidos"=>"nullable|string|max:300",
+                "cliente_direccion"=>"nullable|string|max:400",
+                "cliente_celular"=>"nullable|string|max:10",
+                "cliente_correo"=>"nullable|string|max:50",
+            ]);
+        }
+
+        return $requestArray;
     }
 
     public function messages(): array {
         return [
             'monto_efectivo.max' => 'El valor debe ser menor que el importe total',
             'correlativo.unique' => 'El número de comprobante, serie y correlativo ya existe',
-            'id_cliente.exists' => 'El ID del cliente seleccionado no es válido. Consultar con el administrador del sistema.'
+            'id_cliente.exists' => 'El ID del cliente seleccionado no es válido. Consultar con el administrador del sistema.',
+            'id_cliente.required' => 'El cliente es obligatorio.',
+            'cliente_numero_documento.required' => "El número de documento del cliente es obligatorio.",
+            'cliente_nombres.required' => "El nombre/razón social del cliente es obligatorio."
         ];
     }
 }

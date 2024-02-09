@@ -36,6 +36,8 @@ class ProveedorController extends Controller
         $proveedor->nombre_contacto = $data["nombre_contacto"];
         $proveedor->celular_contacto = $data["celular_contacto"];
 
+        $proveedor->save();
+
         return $proveedor;
     }
 

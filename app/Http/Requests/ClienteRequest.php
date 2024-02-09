@@ -23,7 +23,7 @@ class ClienteRequest extends FormRequest
     {
         return [
             "id_tipo_documento"=> "required|string|size:1",
-            "numero_documento"=>"nullable|string|max:15",
+            "numero_documento"=>($this->input('id_tipo_documento') == "0" ? "required" : "nullable")."|string|max:15",
             "nombres"=>"required|string|max:300",
             "apellidos"=>"nullable|string|max:300",
             "direccion"=>"nullable|string|max:400",
@@ -32,6 +32,13 @@ class ClienteRequest extends FormRequest
             "celular"=>"nullable|string|max:10",
             "fecha_nacimiento"=>"nullable|date",
             "numero_contacto"=>"nullable|string|max:20",
+        ];
+    }
+
+    public function messages(): array {
+        return [
+            'numero_documento.required' => "El número de documento del cliente es obligatorio.",
+            'nombres.required' => "El nombre/razón social del cliente es obligatorio."
         ];
     }
 }

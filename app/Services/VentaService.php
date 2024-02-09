@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Cliente;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Models\Producto;
@@ -13,12 +14,28 @@ use Database\Seeders\DocumentoElectronicoSeeder;
 class VentaService {
 
     public function registrar(array $data){
-
         $venta = new Venta();
 
         $venta->id_tipo_comprobante =  $data['id_tipo_comprobante'];
         $venta->serie = $data["serie"];
         $venta->correlativo = $data["correlativo"];
+
+        $idCliente = @$data['id_cliente']?: NULL;
+
+        if (is_null($idCliente)){
+            $cliente = new Cliente;
+            $cliente->id_tipo_documento = $data["cliente_id_tipo_documento"];
+            $cliente->numero_documento = $data["cliente_numero_documento"];
+            $cliente->nombres = $data["cliente_nombres"];
+            $cliente->apellidos = $data["cliente_apellidos"];
+            $cliente->direccion = $data["cliente_direccion"];
+            $cliente->correo = $data["cliente_correo"];
+            $cliente->celular = $data["cliente_celular"];
+            $cliente->save();
+
+            $data["id_cliente"] = $cliente->id;
+        }
+
         $venta->id_cliente =  $data['id_cliente'];
 
         $venta->observaciones = @$data['observaciones']?: NULL;

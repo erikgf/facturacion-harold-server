@@ -23,6 +23,7 @@ class ProductoRequest extends FormRequest
     {
         return [
             "empresa_especial"=>"required|string|size:3",
+            "codigo_unico"=>"nullable|string|max:20",
             "tallas"=>"nullable|string|max:50",
             "nombre"=>"required|string|max:200",
             "descripcion"=>"nullable|string",
