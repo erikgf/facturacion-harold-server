@@ -33,16 +33,19 @@ class DocumentoElectronicoService {
 
         $doc->fecha_emision = $data["fecha_emision"];
         $doc->fecha_vencimiento = @$data["fecha_vencimiento"] ?: $data["fecha_emision"];
-        $doc->hora_emision = $data["hora_venta"].":00";
+        $doc->hora_emision = $data["hora_emision"].":00";
         $doc->id_tipo_moneda = $data["id_tipo_moneda"];
 
-        $esDocumentoElectronicoCredito = $data['monto_credito'] > 0.00;
+        $doc->importe_credito = @$data["monto_credito"] ?: 0.00;
+
+        $data["descuento_global"] = @$data["descuento_global"] ?: 0.00;
+
+        $esDocumentoElectronicoCredito = $doc->importe_credito > 0.00;
         $esDocumentoElectronicoDescuento =  $data['descuento_global'] > 0.00;
         $noEsDocumentoElectronicoNota = in_array($data["id_tipo_comprobante"], ["01","03"]);
 
         $doc->total_inafectas = 0.00;
         $doc->total_exoneradas = 0.00;
-        $doc->importe_credito = $data["monto_credito"];
 
         if ($esDocumentoElectronicoDescuento){
             $doc->descuento_global =  $data['descuento_global'];
@@ -110,5 +113,17 @@ class DocumentoElectronicoService {
         }
 
         return $doc;
+    }
+
+    public function anular(DocumentoElectronico $doc){
+
+        if ($doc->estado_cdr === "0"){
+            $doc->delete();
+        } else {
+            throw new \Exception("No puedo eliminar el comprobante ".$doc->serie."-".$doc->correlativo.", ya está en SUNAT.", 1);
+        }
+
+        return $doc;
+
     }
 }

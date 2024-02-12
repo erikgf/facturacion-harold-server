@@ -62,8 +62,13 @@ Route::group(["middleware"=>['auth:sanctum']], function(){
         Route::get("historial-productos/{idSucursal}", [AlmacenController::class, "getHistorialProductosPorSucursal"]);
     });
 
-    Route::prefix("comprobantes/")->group(function(){
-        Route::get("generacion", [DocumentoElectronicoController::class, "obtenerComprobantesParaGeneracion"]);
+    Route::prefix("comprobantes")->group(function(){
+        Route::post("registrar-factura", [DocumentoElectronicoController::class, "registrarFactura"]);
+        Route::post("registrar-nota", [DocumentoElectronicoController::class, "registrarNota"]);
+        Route::get("/", [DocumentoElectronicoController::class, "index"]);
+        Route::get("/{id}", [DocumentoElectronicoController::class, "show"]);
+        Route::delete("/{id}", [DocumentoElectronicoController::class, "destroy"]);
+        Route::get("generacion/listar", [DocumentoElectronicoController::class, "obtenerComprobantesParaGeneracion"]);
         Route::post("generar-xml/{id}", [DocumentoElectronicoController::class, "generarComprobanteXML"]);
         Route::post("firmar-xml/{id}", [DocumentoElectronicoController::class, "firmarComprobanteXML"]);
         Route::post("generar-firmar-xml/{id}", [DocumentoElectronicoController::class, "generarYFirmarComprobanteXML"]);

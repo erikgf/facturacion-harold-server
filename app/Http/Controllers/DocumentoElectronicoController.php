@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DEFacturaRequest;
+use App\Http\Requests\DENotaRequest;
 use App\Models\DocumentoElectronico;
 use App\Models\User;
 use App\Services\DocumentoElectronicoService;
@@ -12,6 +14,83 @@ use Illuminate\Support\Facades\DB;
 
 class DocumentoElectronicoController extends Controller
 {
+    public function index(Request $request){
+        $data = $request->validate([
+            "id_tipo_comprobante"=>"required|string|size:2",
+            "fecha_inicio"=>"required|date",
+            "fecha_fin"=>"required|date"
+        ]);
+
+        return DocumentoElectronico::whereBetween('fecha_emision', [$data["fecha_inicio"], $data["fecha_fin"]])
+                ->where(["id_tipo_comprobante"=>$data["id_tipo_comprobante"]])
+                ->select(
+                        "id",
+                        "id_tipo_comprobante", "serie", "correlativo",
+                        "id_cliente", "numero_documento_cliente", "descripcion_cliente", "id_tipo_moneda",
+                        "fecha_emision","hora_emision",
+                        "total_gravadas", "descuento_global", "descuento_global_igv","total_igv", "importe_total"
+                        )
+                ->orderBy("fecha_emision", "DESC")
+                ->orderBy("hora_emision", "DESC")
+                ->get();
+    }
+
+    public function show(string $id){
+        return DocumentoElectronico::with([
+                    "detalle"=>function($q){
+                        $q->select("id_documento_electronico",
+                                "item",
+                                "descripcion_item as producto",
+                                "cantidad_item as cantidad",
+                                "subtotal",
+                                "valor_venta",
+                                "total_igv",
+                                "precio_venta_unitario as precio_unitario");
+                        $q->orderBy("item");
+                    }
+                ])
+                ->findOrFail($id,
+                [
+                    "id",
+                    "id_tipo_comprobante", "serie", "correlativo",
+                    "id_cliente", "numero_documento_cliente", "descripcion_cliente", "id_tipo_moneda",
+                    "fecha_emision","hora_emision", "fecha_vencimiento",
+                    "total_gravadas", "descuento_global", "descuento_global_igv","total_igv", "importe_total",
+                    DB::raw("(importe_total - descuento_global) as subtotal")
+                ]
+            );
+    }
+
+    public function destroy(string $id){
+        $doc = DocumentoElectronico::findOrFail($id);
+        DB::beginTransaction();
+        $doc = (new DocumentoElectronicoService)->anular($doc);
+        DB::commit();
+        return $doc;
+    }
+
+    public function registrarFactura(DEFacturaRequest $request){
+        $data = $request->validated();
+        $data["id_usuario_registro"] = auth()->user()->id;
+
+        DB::beginTransaction();
+        $doc = (new DocumentoElectronicoService)->registrar($data);
+        DB::commit();
+
+        return $doc;
+    }
+
+    public function registrarNota(DENotaRequest $request){
+        $data = $request->validated();
+        $data["id_usuario_registro"] = auth()->user()->id;
+
+        DB::beginTransaction();
+        $doc = (new DocumentoElectronicoService)->registrar($data);
+        DB::commit();
+
+        return $doc;
+    }
+
     public function obtenerComprobanteTicket(Request $request, string $id){
         $user = $request->user();
         $doc = DocumentoElectronico::with([
