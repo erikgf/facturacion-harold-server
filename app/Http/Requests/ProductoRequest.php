@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ProductoRequest extends FormRequest
 {
@@ -23,7 +24,7 @@ class ProductoRequest extends FormRequest
     {
         return [
             "empresa_especial"=>"required|string|size:3",
-            "codigo_unico"=>"nullable|string|max:20",
+            "codigo_unico"=>"nullable|string|max:20|unique:productos,codigo_generado",
             "tallas"=>"nullable|string|max:50",
             "nombre"=>"required|string|max:200",
             "descripcion"=>"nullable|string",

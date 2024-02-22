@@ -13,10 +13,12 @@ use App\Http\Controllers\PermisoRolController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\RolController;
+use App\Http\Controllers\SerieDocumentoController;
 use App\Http\Controllers\SesionController;
 use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\SucursalProductoController;
 use App\Http\Controllers\TipoCategoriaController;
+use App\Http\Controllers\TipoComprobanteController;
 use App\Http\Controllers\UnidadMedidaController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\VentaController;
@@ -35,6 +37,7 @@ use Illuminate\Support\Facades\Route;
 Route::post("sesion/iniciar", [SesionController::class, "login"]);
 
 Route::group(["middleware"=>['auth:sanctum']], function(){
+    Route::apiResource("tipo-comprobantes", TipoComprobanteController::class);
     Route::apiResource("unidad-medidas", UnidadMedidaController::class);
     Route::apiResource("categorias", CategoriaProductoController::class);
     Route::apiResource("tipo-categorias", TipoCategoriaController::class);
@@ -46,6 +49,8 @@ Route::group(["middleware"=>['auth:sanctum']], function(){
     Route::apiResource("sucursales", SucursalController::class);
     Route::apiResource("usuarios", UsuarioController::class);
     Route::apiResource("productos", ProductoController::class);
+    Route::apiResource("serie-documentos", SerieDocumentoController::class);
+    Route::get("tipo-comprobantes/{id}/series", [SerieDocumentoController::class, "getSeriePorTipoComprobante"]);
 
     Route::get("categorias/tipo/{tipo}", [CategoriaProductoController::class, "obtenerPorTipo"]);
     Route::get("permisos-rol/{idRol}", [PermisoRolController::class, "index"]);
@@ -93,6 +98,8 @@ Route::group(["middleware"=>['auth:sanctum']], function(){
         Route::get("stock", [AlmacenReportesController::class, "obtenerStock"]);
         Route::get("kardex", [AlmacenReportesController::class, "obtenerKardex"]);
     });
+
+    Route::post("productos-tickets", [ProductoController::class, "getTicketsData"]);
 
     Route::post("sesion/cerrar", [SesionController::class, "logout"]);
     Route::get("permisos-usuario", [PermisoRolController::class, "obtenerPermisos"]);

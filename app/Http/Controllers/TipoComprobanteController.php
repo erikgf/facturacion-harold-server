@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\TipoComprobante;
-use Illuminate\Http\Request;
 
 class TipoComprobanteController extends Controller
 {

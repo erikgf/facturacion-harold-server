@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Producto;
 use App\Models\ProductoImagen;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -11,11 +12,28 @@ class ProductoService {
 
     private function crearCodigoGenerado (Producto $producto){
         $bloqueCategoria = Str::padLeft($producto->id_categoria_producto, 3, '0');
-        $bloqueRandom = Str::upper(Str::random(8));
 
-        return $producto->empresa_especial."-".
+        $dbName = config("database.connections")["mysql"]["database"];
+        $posibleNuevoID = DB::table('INFORMATION_SCHEMA.TABLES')
+                            ->select('AUTO_INCREMENT as id')
+                            ->where('TABLE_SCHEMA', $dbName)
+                            ->where('TABLE_NAME','productos')
+                            ->pluck("id")
+                            ->first();
+        $bloqueCodigoProducto = Str::padLeft($posibleNuevoID, 5, '0');
+
+        return  $producto->empresa_especial."-".
                 $bloqueCategoria."-".
-                $bloqueRandom;
+                $bloqueCodigoProducto;
+    }
+
+    private function actualizarCodigoGenerado (Producto $producto){
+        $bloqueCategoria = Str::padLeft($producto->id_categoria_producto, 3, '0');
+        $bloqueCodigoProducto = Str::padLeft($producto->id, 5, '0');
+
+        return  $producto->empresa_especial."-".
+                $bloqueCategoria."-".
+                $bloqueCodigoProducto;
     }
 
     public function registrar(array $data){
@@ -104,6 +122,21 @@ class ProductoService {
         $producto->delete();
 
         return $producto;
+    }
+
+    public function actualizarCodigosGenerados(){
+        $productos = Producto::all();
+
+        DB::beginTransaction();
+        $productos->each(function($producto){
+            $codigoGenerado = $this->actualizarCodigoGenerado($producto);
+            $producto->codigo_generado = $codigoGenerado;
+            $producto->save();
+            var_dump($codigoGenerado);
+        });
+        DB::commit();
+
+        return true;
     }
 
 }

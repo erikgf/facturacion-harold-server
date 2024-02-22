@@ -25,13 +25,6 @@ class DEFacturaRequest extends FormRequest
         $requestArray = [
             "id_tipo_comprobante"=>"required|string|size:2",
             "serie"=>"required|string|size:4",
-            "correlativo"=>[
-                "required",
-                "integer",
-                Rule::unique('documento_electronicos', 'correlativo')
-                    ->where('id_tipo_comprobante', $this->input('id_tipo_comprobante'))
-                    ->where('serie', $this->input('serie')),
-            ],
             "id_cliente"=>"nullable|integer|exists:clientes,id",
             "descuento_global"=>"required|numeric|max:9999999",
             "observaciones"=>"nullable|string",
@@ -47,6 +40,18 @@ class DEFacturaRequest extends FormRequest
             "condicion_pago"=>"required|string|size:1",
             "es_delivery"=>"required|string|size:1",
         ];
+
+        if ($this->has('correlativo') && $this->input("correlativo") != ""){
+            $requestArray = array_merge($requestArray, [
+                "correlativo"=>[
+                    "required",
+                    "integer",
+                    Rule::unique('documento_electronicos', 'correlativo')
+                        ->where('id_tipo_comprobante', $this->input('id_tipo_comprobante'))
+                        ->where('serie', $this->input('serie')),
+                ]
+            ]);
+        }
 
         return $requestArray;
     }

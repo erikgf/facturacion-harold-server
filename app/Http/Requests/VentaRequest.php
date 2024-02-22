@@ -25,13 +25,6 @@ class VentaRequest extends FormRequest
         $requestArray = [
             "id_tipo_comprobante"=>"required|string|size:2",
             "serie"=>"required|string|size:4",
-            "correlativo"=>[
-                "required",
-                "integer",
-                Rule::unique('ventas', 'correlativo')
-                    ->where('id_tipo_comprobante', $this->input('id_tipo_comprobante'))
-                    ->where('serie', $this->input('serie')),
-            ],
             "id_cliente"=>"nullable|integer|exists:clientes,id",
             "monto_efectivo"=>"required|numeric|max:".$this->input('importe_total'),
             "monto_tarjeta"=>"required|numeric|max:9999999",
@@ -52,6 +45,19 @@ class VentaRequest extends FormRequest
             "productos.*.cantidad"=>"required|numeric|min:1",
             "productos.*.precio_unitario"=>"required|numeric",
         ];
+
+
+        if ($this->has('correlativo') && $this->input("correlativo") != ""){
+            $requestArray = array_merge($requestArray, [
+                "correlativo"=>[
+                    "required",
+                    "integer",
+                    Rule::unique('ventas', 'correlativo')
+                        ->where('id_tipo_comprobante', $this->input('id_tipo_comprobante'))
+                        ->where('serie', $this->input('serie')),
+                ]
+            ]);
+        }
 
         if ($this->input('id_cliente') === NULL){
             $requestArray = array_merge($requestArray, [

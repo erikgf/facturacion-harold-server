@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\Cliente;
+use App\Models\DocumentoElectronico;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Models\Producto;
+use App\Models\SerieDocumento;
 use App\Models\SucursalProducto;
 use App\Models\SucursalProductoHistorial;
 use App\Models\VentaCredito;
@@ -14,11 +16,41 @@ use Database\Seeders\DocumentoElectronicoSeeder;
 class VentaService {
 
     public function registrar(array $data){
+        $esCorrelativoAutomatico = false;
         $venta = new Venta();
 
-        $venta->id_tipo_comprobante =  $data['id_tipo_comprobante'];
-        $venta->serie = $data["serie"];
-        $venta->correlativo = $data["correlativo"];
+        $correlativo = @$data["correlativo"] ?: NULL;
+
+        if ($data["id_tipo_comprobante"] != "00"){
+            $venta->id_tipo_comprobante =  '00';
+            $serieCorrelativo = SerieDocumento::where(["id_tipo_comprobante"=>$venta->id_tipo_comprobante])->first(["serie", "correlativo"]);
+
+            $venta->serie = $serieCorrelativo->serie;
+            $venta->correlativo = $serieCorrelativo->correlativo;
+            $esCorrelativoAutomatico = true;
+        } else {
+            $venta->id_tipo_comprobante =  $data["id_tipo_comprobante"];
+            $venta->serie = $data["serie"];
+            if ($correlativo == NULL){
+                $venta->correlativo = SerieDocumento::where(["serie"=>$venta->serie, "id_tipo_comprobante"=>$data["id_tipo_comprobante"]])->pluck("correlativo")->first();
+                $esCorrelativoAutomatico = true;
+            }
+        }
+
+        if ($venta->correlativo == NULL){
+            throw new \Exception("Correlativo de serie ".$data["serie"]. " no encontrado.", 1);
+        }
+
+        if (!$esCorrelativoAutomatico){
+            $existeRepetido = Venta::where([
+                "serie"=>$venta->serie,
+                "correlativo"=>$venta->correlativo
+            ])->exists();
+
+            if ($existeRepetido){
+                throw new \Exception("La venta a registrar ya existe.", 1);
+            }
+        }
 
         $idCliente = @$data['id_cliente']?: NULL;
 
@@ -202,6 +234,13 @@ class VentaService {
             $ventaCredito->save();
         }
 
+        SerieDocumento::where([
+            "id_tipo_comprobante"=>$venta->id_tipo_comprobante,
+            "serie"=>$venta->serie
+        ])->update([
+            "correlativo"=>$venta->correlativo + 1
+        ]);
+
         if (in_array($data["id_tipo_comprobante"], ['01','03'])){
             $data["fecha_emision"] = $data["fecha_venta"];
             $data["hora_emision"] = $data["hora_venta"];
@@ -214,6 +253,18 @@ class VentaService {
     }
 
     public function anular(Venta $venta){
+        $doc = DocumentoElectronico::where([
+            "id_atencion"=>$venta->id
+        ])->first();
+
+        if ($doc){
+            if ($doc->cdr_estado === "0"){
+                throw new \Exception("La venta tiene al comprobante ".$doc->serie."-".$doc->correlativo." asociado y está en SUNAT. Emitir nota de crédito primero.", 1);
+            }
+
+            $doc = (new DocumentoElectronicoService)->anular($doc);
+        }
+
         $venta->load(["detalle", "credito", "pagos"]);
 
         if (count($venta->pagos) > 0){

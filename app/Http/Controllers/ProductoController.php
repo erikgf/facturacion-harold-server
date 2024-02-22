@@ -103,4 +103,36 @@ class ProductoController extends Controller
 
         return $producto;
     }
+
+    public function getTicketsData(Request $request){
+        $data = $request->validate([
+            "items"=> "required|array",
+            "items.*.id"=>"required|integer",
+            "items.*.cantidad"=>"required|integer"
+        ]);
+
+
+        $items = $data["items"];
+        $collectionItems = collect($items)->sortBy('id');
+
+        $collectionIds = $collectionItems->map(function($item){
+            return $item["id"];
+        });
+
+        $productos = Producto::with(["categoria"=> function($q){
+                            $q->select("id", "nombre");
+                        }])
+                        ->whereIn("id", $collectionIds->toArray())
+                        ->orderBy("id")
+                        ->get([
+                            "id","id_marca", "id_categoria_producto", "codigo_generado", "empresa_especial", "tallas", "nombre", "precio_unitario"
+                        ]);
+
+        $productos->each(function($p,$i) use($items){
+            $p->veces = (int) $items[$i]["cantidad"];
+            return $p;
+        });
+
+        return $productos;
+    }
 }

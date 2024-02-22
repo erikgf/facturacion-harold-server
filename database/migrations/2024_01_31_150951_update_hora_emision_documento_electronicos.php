@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('documento_electronicos', function (Blueprint $table) {
-            $table->string('hora_emision', 8);
+            $table->string('hora_emision', 8)->change();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('documento_electronicos', function (Blueprint $table) {
-            $table->string('hora_emision', 5);
+            $table->string('hora_emision', 5)->change();
         });
     }
 };

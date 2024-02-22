@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('documento_electronicos', function (Blueprint $table) {
-            $table->string('cdr_descripcion', 600)->change();
+        Schema::create('serie_documentos', function (Blueprint $table) {
+            $table->id();
+            $table->char("id_tipo_comprobante", 2);
+            $table->char("serie", 4);
+            $table->integer("correlativo");
+            $table->softDeletes();
+            $table->timestamps();
         });
     }
 
@@ -21,8 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('documento_electronicos', function (Blueprint $table) {
-            $table->string('cdr_descripcion', 300)->change();
-        });
+        Schema::dropIfExists('serie_documentos');
     }
 };

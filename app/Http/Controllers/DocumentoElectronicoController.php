@@ -127,6 +127,7 @@ class DocumentoElectronicoController extends Controller
         $data = $request->validate([
             "fecha_inicio"=>"required|date",
             "fecha_fin"=>"required|date",
+            "id_tipo_comprobante"=>"required|string",
             "estado"=>"required|string|size:1",
             "todas_fechas"=>"required|integer"
         ]);
@@ -165,6 +166,10 @@ class DocumentoElectronicoController extends Controller
                 break;
             case "T":
                 break;
+        }
+
+        if ($data["id_tipo_comprobante"] != "*"){
+            $docs = $docs->where(["id_tipo_comprobante"=>$data["id_tipo_comprobante"]]);
         }
 
         $docs = $docs->get();
