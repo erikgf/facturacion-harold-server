@@ -8,6 +8,7 @@ use App\Models\DocumentoElectronico;
 use App\Models\DocumentoElectronicoDetalle;
 use App\Models\Producto;
 use App\Models\SerieDocumento;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 
 class DocumentoElectronicoService {
@@ -24,7 +25,7 @@ class DocumentoElectronicoService {
         if ($correlativo == NULL){
             $correlativo = SerieDocumento::where(["serie" => $data["serie"], "id_tipo_comprobante"=>$data["id_tipo_comprobante"]])->pluck("correlativo")->first();
             if ($correlativo == NULL){
-                throw new \Exception("Correlativo de serie ".$data["serie"]. " no encontrado.", 1);
+                abort(Response::HTTP_NOT_FOUND, "Correlativo de serie ".$data["serie"]. " no encontrado.");
             }
             $esCorrelativoAutomatico = true;
         }
@@ -39,7 +40,7 @@ class DocumentoElectronicoService {
             ])->exists();
 
             if ($existeRepetido){
-                throw new \Exception("El comprobante electrónico a registrar ya existe.", 1);
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "El comprobante electrónico a registrar ya existe.");
             }
         }
 
@@ -94,7 +95,7 @@ class DocumentoElectronicoService {
             ])->first();
 
             if ($docMod == NULL){
-                throw new \Exception("No puedo emitir una nota a un comprobante que NO está en SUNAT.", 1);
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "No puedo emitir una nota a un comprobante que NO está en SUNAT.");
             }
 
             $esDocumentoElectronicoNotaCreditoAnuladora = in_array($data["id_tipo_comprobante"], ["07"]) &&
@@ -126,11 +127,11 @@ class DocumentoElectronicoService {
             $item = $i + 1;
             $objProducto = Producto::find($productoDetalle["id_producto"]);
             if (!$objProducto){
-                throw new \Exception("Producto no existe en el sistema.", 1);
+                abort(Response::HTTP_NOT_FOUND, "Producto no existe en el sistema.");
             }
 
             if ($productoDetalle["cantidad"] <= 0){
-                throw new \Exception("Producto de la fila ".($item)." no tiene cantidad válida.", 1);
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "Producto de la fila ".($item)." no tiene cantidad válida.");
             }
 
             $subTotal = round($productoDetalle["precio_unitario"] * $productoDetalle["cantidad"], 3);
@@ -174,13 +175,13 @@ class DocumentoElectronicoService {
 
         if ($esComprobante){
             if ($esSunat){
-                throw new \Exception("No puedo eliminar el comprobante ".$doc->serie."-".$doc->correlativo.", ya está en SUNAT. Por favor emita una NOTA DE CRÉDITO.", 1);
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "No puedo eliminar el comprobante ".$doc->serie."-".$doc->correlativo.", ya está en SUNAT. Por favor emita una NOTA DE CRÉDITO.");
             }
         }
 
         if ($esNota){
             if ($esSunat){
-                throw new \Exception("No puedo eliminar el comprobante ".$doc->serie."-".$doc->correlativo.", ya está en SUNAT. No puedo anularlo.", 1);
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "No puedo eliminar el comprobante ".$doc->serie."-".$doc->correlativo.", ya está en SUNAT. No puedo anularlo.");
             }
 
             if (in_array($doc->id_tipo_comprobante, ["07"]) &&

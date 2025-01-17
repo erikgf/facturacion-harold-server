@@ -22,14 +22,19 @@ class VentaController extends Controller
         return Venta::with(["cliente"=>function($q){
                     $q->select("id", "numero_documento",DB::raw("CONCAT(nombres,' ',apellidos) as nombres_apellidos"));
                 }])
+                ->leftJoin("documento_electronicos as de", function($join){
+                    $join->on("de.id_atencion","=","ventas.id");
+                })
                 ->whereBetween('fecha_venta', [$data["fecha_inicio"], $data["fecha_fin"]])
                 ->where(["id_sucursal"=>$data["id_sucursal"]])
                 ->select(
-                        "id",
-                        "id_tipo_comprobante", "serie", "correlativo",
-                        "id_cliente",
-                        "monto_efectivo", "monto_credito", "monto_tarjeta", "monto_yape", "monto_plin", "monto_transferencia","monto_descuento",
-                        "monto_total_venta", "fecha_venta", "hora_venta"
+                        "ventas.id",
+                        "ventas.id_cliente",
+                        "ventas.monto_efectivo", "ventas.monto_credito", "ventas.monto_tarjeta", "ventas.monto_yape", "ventas.monto_plin", "ventas.monto_transferencia","ventas.monto_descuento",
+                        "ventas.monto_total_venta", "ventas.fecha_venta", "ventas.hora_venta",
+                        DB::raw("COALESCE(de.id_tipo_comprobante, ventas.id_tipo_comprobante) as id_tipo_comprobante"),
+                        DB::raw("COALESCE(de.serie,ventas.serie) as serie"),
+                        DB::raw("COALESCE(de.correlativo,ventas.correlativo) as correlativo")
                         )
                 ->orderBy("fecha_venta", "DESC")
                 ->orderBy("hora_venta", "DESC")
@@ -48,7 +53,7 @@ class VentaController extends Controller
     }
 
     public function show(string $id){
-        return Venta::with([
+        $venta = Venta::with([
                     "cliente"=>function($q){
                         $q->select("id", "numero_documento",DB::raw("CONCAT(nombres,' ',apellidos) as nombres_apellidos"));
                     },
@@ -57,7 +62,7 @@ class VentaController extends Controller
                         $q->orderBy("item");
                     },
                     "comprobante"=>function($q){
-                        $q->select("id", "id_atencion",);
+                        $q->select("id", "id_atencion", "id_tipo_comprobante", "serie", "correlativo");
                     }
                 ])
                 ->findOrFail($id,
@@ -70,6 +75,15 @@ class VentaController extends Controller
                     DB::raw("(monto_total_venta - monto_descuento) as subtotal")
                 ]
             );
+
+
+        if ($venta->comprobante != null){
+            $venta->id_tipo_comprobante = $venta->comprobante->id_tipo_comprobante;
+            $venta->serie = $venta->comprobante->serie;
+            $venta->correlativo = $venta->comprobante->correlativo;
+        }
+
+        return $venta;
     }
 
     public function destroy(string $id){

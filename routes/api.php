@@ -80,6 +80,10 @@ Route::group(["middleware"=>['auth:sanctum']], function(){
         Route::post("enviar/{id}", [DocumentoElectronicoController::class, "enviarSUNAT"]);
     });
 
+    Route::prefix("comprobantes-sc")->group(function(){
+        Route::get("/{serieCorrelativo}", [DocumentoElectronicoController::class, "indexBySerieCorrelativo"]);
+    });
+
     Route::apiResource("resumenes-diarios", DocumentoElectronicoResumenDiarioController::class);
     Route::prefix("resumenes-diarios")->group(function(){
         Route::get("comprobantes-fecha/{fecha}", [DocumentoElectronicoResumenDiarioController::class, "obtenerComprobantesPorFecha"]);

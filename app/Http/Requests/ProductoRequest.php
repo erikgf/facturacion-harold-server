@@ -22,9 +22,11 @@ class ProductoRequest extends FormRequest
      */
     public function rules(): array
     {
+        $id = $this->route("producto");
+
         return [
             "empresa_especial"=>"required|string|size:3",
-            "codigo_unico"=>"nullable|string|max:20|unique:productos,codigo_generado",
+            "codigo_unico"=>"nullable|string|max:20|unique:productos,codigo_generado,".$id,
             "tallas"=>"nullable|string|max:50",
             "nombre"=>"required|string|max:200",
             "descripcion"=>"nullable|string",
@@ -39,5 +41,11 @@ class ProductoRequest extends FormRequest
             "imagenes_indices"=>"nullable|array",
             "imagenes_indices.*"=>"required|integer",
         ];
+    }
+
+    public function messages() {
+        return [
+                'codigo_unico.unique' => 'El código único de este producto ya esxiste.',
+               ];
     }
 }

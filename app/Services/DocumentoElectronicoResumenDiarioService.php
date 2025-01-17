@@ -6,6 +6,8 @@ use App\Models\DocumentoElectronico;
 use App\Models\DocumentoElectronicoResumenDiario;
 use App\Models\DocumentoElectronicoResumenDiarioDetalle;
 use App\Models\EmpresaFacturacion;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class DocumentoElectronicoResumenDiarioService {
@@ -47,11 +49,11 @@ class DocumentoElectronicoResumenDiarioService {
         $doc = DocumentoElectronicoResumenDiario::findOrFail($id, ["id", "nombre_resumen", "ticket", "cdr_estado"]);
 
         if ($doc->ticket){
-            throw new \Exception("El Resumen Diario $doc->nombre_resumen anulado ya tiene un TICKET en espera. No se puede eliminar.", 1);
+            abort(Response::HTTP_INTERNAL_SERVER_ERROR, "El Resumen Diario $doc->nombre_resumen anulado ya tiene un TICKET en espera. No se puede eliminar.");
         }
 
         if ($doc->cdr_estado === "0"){
-            throw new \Exception("El Resumen Diario $doc->nombre_resumen anulado ya está informado a SUNAT. No se puede eliminar.", 1);
+            abort(Response::HTTP_INTERNAL_SERVER_ERROR, "El Resumen Diario $doc->nombre_resumen anulado ya está informado a SUNAT. No se puede eliminar.");
         }
 
         $doc->delete();
@@ -60,18 +62,20 @@ class DocumentoElectronicoResumenDiarioService {
 
     public function obtenerComprobantesPorFecha(string $fecha){
         //Obtener comprobantes 03 y 07 afectando a 03, con fecha indicada Y sin CDR.
-        return DocumentoElectronico::where([
+        return DocumentoElectronico
+                ::query()
+                ->where([
                     "fecha_emision"=>$fecha,
                 ])
                 ->whereNull('cdr_estado')
                 ->whereIn("id_tipo_comprobante", ["03","07","08"])
                 ->whereRaw("LEFT(serie, 1) = 'B'")
                 ->select("id",
-                            "id_tipo_comprobante", "serie", "correlativo",
-                            "id_tipo_documento_cliente","numero_documento_cliente", "id_tipo_moneda",
-                            "total_gravadas", "total_inafectas", "total_exoneradas", "total_isc",
-                            "total_igv", "importe_total",
-                            "id_tipo_comprobante_modifica", "serie_comprobante_modifica", "correlativo_comprobante_modifica")
+                        "id_tipo_comprobante", "serie", "correlativo",
+                        "id_tipo_documento_cliente","numero_documento_cliente", "id_tipo_moneda",
+                        "total_gravadas", "total_inafectas", "total_exoneradas", "total_otro_imp","total_isc",
+                        "total_igv", "importe_total",
+                        "id_tipo_comprobante_modifica", "serie_comprobante_modifica", "correlativo_comprobante_modifica")
                 ->get();
     }
 
@@ -143,15 +147,91 @@ class DocumentoElectronicoResumenDiarioService {
         if ($deboGenerar){
             $rd->generado = (new DocumentoElectronicoResumenDiarioXMLService)->generarComprobanteXML($rd->id);
             if ($rd->generado["fue_generado"] == 0){
-                throw new \Exception("Ha ocurrido un problema al generar el Resumen Diario.", 1);
+                abort(Response::HTTP_INTERNAL_SERVER_ERROR, "Ha ocurrido un problema al generar el Resumen Diario.");
             }
         }
 
         if ($deboFirmar){
             $rd->firmado = (new DocumentoElectronicoResumenDiarioXMLService)->firmarComprobanteXML($rd->id);
             if ($rd->firmado["valor_firma"] == ""){
-                throw new \Exception("Ha ocurrido un problema al generar el Resumen Diario.", 1);
+                abort(Response::HTTP_INTERNAL_SERVER_ERROR, "Ha ocurrido un problema al firmar el Resumen Diario.");
             }
+        }
+
+        return $rd;
+    }
+
+    public function registrarParaMasivo(
+            $fecha_generacion,
+            $serie,
+            $ruc_empresa,
+            $secuencia,
+            $fecha_emision,
+            $status,
+            $comprobantes
+        ){
+
+
+        $rd = new DocumentoElectronicoResumenDiario();
+        $rdService = new DocumentoElectronicoResumenDiarioXMLService;
+
+        $rd->codigo = $this->CODIGO_COMPROBANTE;
+        $rd->fecha_generacion = $fecha_generacion;
+        $rd->serie = $serie;
+        $rd->secuencia = $secuencia;
+
+        $rd->nombre_resumen =  implode("-", [
+            $ruc_empresa,
+            $rd->codigo,
+            $rd->serie,
+            $secuencia
+        ]);
+
+        $rd->fecha_emision = $fecha_emision;
+
+        $rd->save();
+
+        $dataComprobantes = [];
+        $now = date("Y-m-d H:i:s");
+        foreach($comprobantes as $i => $comprobante){
+            $item = $i + 1;
+
+            $dataComprobantes[] = [
+                "id_documento_electronico_resumen_diario"=>$rd->id,
+                "id_documento_electronico"=>$comprobante->id,
+                "item"=>$item,
+                "id_tipo_comprobante"=>$comprobante->id_tipo_comprobante,
+                "serie_comprobante"=>$comprobante->serie,
+                "correlativo_comprobante"=> $comprobante->correlativo,
+                "id_tipo_documento_cliente"=> $comprobante->id_tipo_documento_cliente,
+                "numero_documento_cliente"=> $comprobante->numero_documento_cliente,
+                "id_tipo_comprobante_modificado"=> $comprobante->id_tipo_comprobante_modifica,
+                "serie_comprobante_modificado"=> $comprobante->serie_comprobante_modifica,
+                "correlativo_comprobante_modificado"=> $comprobante->correlativo_comprobante_modifica,
+                "status"=>$status,
+                "id_tipo_moneda"=> $comprobante->id_tipo_moneda,
+                "importe_gravadas"=> $comprobante->total_gravadas,
+                "importe_exoneradas"=> $comprobante->total_exoneradas,
+                "importe_inafectas"=> $comprobante->total_inafectas,
+                "importe_otros"=> $comprobante->total_otro_imp ?? "0.00",
+                "importe_igv"=> $comprobante->total_igv ?? "0.00",
+                "importe_isc"=> $comprobante->total_isc ?? "0.00",
+                "importe_total"=>$comprobante->importe_total,
+                "created_at"=>$now,
+                "updated_at"=>$now
+            ];
+        }
+
+        DB::table('documento_electronico_resumen_diario_detalles')->insert($dataComprobantes);
+
+        $rd->generado = $rdService->generarComprobanteXML($rd->id);
+        if ($rd->generado["fue_generado"] == 0){
+            abort(Response::HTTP_INTERNAL_SERVER_ERROR, "Ha ocurrido un problema al generar el Resumen Diario.");
+        }
+
+        $rd->firmado = $rdService->firmarComprobanteXML($rd->id);
+        if ($rd->firmado["valor_firma"] == ""){
+            abort(Response::HTTP_INTERNAL_SERVER_ERROR, "Ha ocurrido un problema al firmar el Resumen Diario.");
         }
 
         return $rd;

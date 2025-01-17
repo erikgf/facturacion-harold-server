@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\SucursalProducto;
 use App\Models\SucursalProductoHistorial;
-use App\Models\Venta;
 use Illuminate\Support\Facades\DB;
 
 class AlmacenReportesService {

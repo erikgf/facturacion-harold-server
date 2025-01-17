@@ -11,7 +11,8 @@ use App\Models\SerieDocumento;
 use App\Models\SucursalProducto;
 use App\Models\SucursalProductoHistorial;
 use App\Models\VentaCredito;
-use Database\Seeders\DocumentoElectronicoSeeder;
+use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 
 class VentaService {
 
@@ -38,7 +39,7 @@ class VentaService {
         }
 
         if ($venta->correlativo == NULL){
-            throw new \Exception("Correlativo de serie ".$data["serie"]. " no encontrado.", 1);
+            abort(Response::HTTP_NOT_FOUND, "Correlativo de serie ".$data["serie"]. " no encontrado.");
         }
 
         if (!$esCorrelativoAutomatico){
@@ -48,7 +49,7 @@ class VentaService {
             ])->exists();
 
             if ($existeRepetido){
-                throw new \Exception("La venta a registrar ya existe.", 1);
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "La venta a registrar ya existe.");
             }
         }
 
@@ -104,11 +105,11 @@ class VentaService {
             $item = $i + 1;
             $objProducto = Producto::find($productoDetalle["id_producto"]);
             if (!$objProducto){
-                throw new \Exception("Producto no existe en el sistema.", 1);
+                abort(Response::HTTP_NOT_FOUND, "Producto no existe en el sistema.");
             }
 
             if ($productoDetalle["cantidad"] <= 0){
-                throw new \Exception("Producto de la fila ".($item)." no tiene cantidad válida.", 1);
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "Producto de la fila ".($item)." no tiene cantidad válida.");
             }
 
             $fechaVencimiento = isset($productoDetalle["fecha_vencimiento"]) ? $productoDetalle["fecha_vencimiento"] : '0000-00-00';
@@ -122,11 +123,12 @@ class VentaService {
                                 ])
                                 ->sum("stock");
 
-            if ($productoDetalle["cantidad"] > $stockActual){
-                throw new \Exception("Producto de fila ".($item). " no tiene stock suficiente.", 1);
-            }
 
             /*ACTUALIZAMOS SUCURSAL*/
+            if ($productoDetalle["cantidad"] > $stockActual){
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "Producto de fila ".($item). " no tiene stock suficiente.");
+            }
+
             /*
             if ($stockActual == null){
                 $sucursalProducto = new SucursalProducto;
@@ -160,29 +162,31 @@ class VentaService {
             $sucursalProductoHistorial->lote = $lote;
             $sucursalProductoHistorial->save();
 
+
             $arregloStocks = SucursalProducto::where([
                                     "id_producto"=>$productoDetalle["id_producto"],
                                     "id_sucursal"=>$data["id_sucursal"],
                                     "fecha_vencimiento"=>$fechaVencimiento,
-                                    "lote"=>$lote
+                                    "lote"=>$lote,
                                 ])
+                                ->where("stock", ">", 0)
                                 ->orderBy("stock", "desc")
                                 ->select("precio_entrada", "stock")
-                                ->get();
+                                ->get()
+                                ->toArray();
 
             $restante = $productoDetalle["cantidad"];
 
-            $cadenaStock = "[";
+            $arrCadenaStock = [];
             foreach ($arregloStocks as $stockItem) {
                 $stock = $stockItem["stock"];
                 if ($restante > $stock){
-                    $restante = $restante - $stock;
+                    $restante -= $stock;
                     $consumido = $stock;
                 } else {
                     $consumido = $restante;
                     $restante = 0;
                 }
-
                 SucursalProducto::where([
                         "id_producto"=>$productoDetalle["id_producto"],
                         "id_sucursal"=>$data["id_sucursal"],
@@ -191,12 +195,14 @@ class VentaService {
                         "precio_entrada"=>$stockItem["precio_entrada"]
                     ])->decrement('stock', $consumido);
 
-                $cadenaStock .= '{"cantidad":"'.$consumido.'","precio_entrada":"'.$stockItem["precio_entrada"].'"}';
+                array_push($arrCadenaStock, '{"cantidad":"'.$consumido.'","precio_entrada":"'.$stockItem["precio_entrada"].'"}');
+
                 if ($restante <= 0){
                     break;
                 }
             }
-            $cadenaStock .= "]";
+
+            $cadenaStock = "[".(Arr::join($arrCadenaStock, ','))."]";
 
             $subTotal = round($productoDetalle["precio_unitario"] * $productoDetalle["cantidad"], 3);
 
@@ -223,6 +229,7 @@ class VentaService {
 
             $ventaDetalle->save();
         }
+
 
         if ($esVentaCredito){
             $ventaCredito = new VentaCredito;
@@ -259,7 +266,7 @@ class VentaService {
 
         if ($doc){
             if ($doc->cdr_estado === "0"){
-                throw new \Exception("La venta tiene al comprobante ".$doc->serie."-".$doc->correlativo." asociado y está en SUNAT. Emitir nota de crédito primero.", 1);
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "La venta tiene al comprobante ".$doc->serie."-".$doc->correlativo." asociado y está en SUNAT. Emitir nota de crédito primero.");
             }
 
             $doc = (new DocumentoElectronicoService)->anular($doc);
@@ -268,7 +275,7 @@ class VentaService {
         $venta->load(["detalle", "credito", "pagos"]);
 
         if (count($venta->pagos) > 0){
-            throw new \Exception("Existen pagos realizados a esta venta, eliminar primero los pagos.", 1);
+            abort(Response::HTTP_UNPROCESSABLE_ENTITY, "Existen pagos realizados a esta venta, eliminar primero los pagos.");
         }
 
         if ($venta->credito){

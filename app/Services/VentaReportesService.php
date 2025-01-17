@@ -43,7 +43,10 @@ class VentaReportesService {
             }
         ]);
 
-        $queryDetalle->where($sqlWhere);
+        $queryDetalle->where($sqlWhere)
+                        ->leftJoin("documento_electronicos as de", function($join){
+                            $join->on("de.id_atencion","=","ventas.id");
+                        });
 
         if (!$todos){
             $queryDetalle->whereBetween("fecha_venta", [$fechaDesde, $fechaHasta]);
@@ -51,21 +54,17 @@ class VentaReportesService {
 
         $detalle = $queryDetalle->orderBy("fecha_venta")
                             ->orderBy("hora_venta")
-                            ->get([
-                                "id", "id_cliente", "id_sucursal",
-                                DB::raw("CONCAT(serie,'-',LPAD(correlativo,6,'0')) as comprobante"),
+                            ->select(
+                                "ventas.id",
+                                "ventas.id_cliente", "ventas.id_sucursal",
                                 "fecha_venta as fecha_venta_raw",
-                                DB::raw("DATE_FORMAT(fecha_venta, '%d/%m/%Y') as fecha_venta"),
-                                "monto_efectivo",
-                                "monto_tarjeta",
-                                "monto_credito",
-                                "monto_yape",
-                                "monto_plin",
-                                "monto_transferencia",
-                                "sub_total",
-                                "monto_descuento",
-                                "monto_total_venta"
-                            ]);
+                                DB::raw("DATE_FORMAT(ventas.fecha_venta, '%d/%m/%Y') as fecha_venta"),
+                                "ventas.monto_efectivo", "ventas.monto_credito", "ventas.monto_tarjeta", "ventas.monto_yape", "ventas.monto_plin", "ventas.monto_transferencia","ventas.monto_descuento",
+                                "ventas.sub_total","ventas.monto_total_venta", "ventas.fecha_venta", "ventas.hora_venta",
+                                DB::raw("COALESCE(de.id_tipo_comprobante, ventas.id_tipo_comprobante) as id_tipo_comprobante"),
+                                DB::raw("CONCAT(COALESCE(de.serie,ventas.serie),'-', LPAD(COALESCE(de.correlativo, ventas.correlativo),6,'0')) as comprobante"),
+                            )
+                            ->get();
 
         return [
             "cabecera"=>$cabecera,

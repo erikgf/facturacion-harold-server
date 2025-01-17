@@ -7,6 +7,7 @@ use App\Models\PermisoRol;
 use App\Models\Rol;
 use App\Services\PermisoRolService;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 class PermisoRolController extends Controller
@@ -72,7 +73,7 @@ class PermisoRolController extends Controller
         $usuario = $request->user();
 
         if (!$usuario){
-            throw new \Exception("No hay usuario válido", 401);
+            abort(Response::HTTP_UNAUTHORIZED, "No hay usuario válido");
         }
 
         $idRol = $usuario->id_rol;

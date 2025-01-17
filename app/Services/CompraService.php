@@ -7,6 +7,7 @@ use App\Models\CompraDetalle;
 use App\Models\Producto;
 use App\Models\SucursalProducto;
 use App\Models\SucursalProductoHistorial;
+use Illuminate\Http\Response;
 
 class CompraService {
 
@@ -35,27 +36,29 @@ class CompraService {
             $item = $i + 1;
             $objProducto = Producto::find($productoDetalle["id_producto"]);
             if (!$objProducto){
-                throw new \Exception("Producto no existe en el sistema.", 1);
+                abort(Response::HTTP_NOT_FOUND, "Producto no existe en el sistema.");
             }
 
             if ($productoDetalle["cantidad"] <= 0){
-                throw new \Exception("Producto de la fila ".($item)." no tiene cantidad válida.", 1);
+                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "Producto de la fila ".($item)." no tiene cantidad válida.");
             }
 
             $fechaVencimiento = isset($productoDetalle["fecha_vencimiento"]) ? $productoDetalle["fecha_vencimiento"] : '0000-00-00';
             $lote = isset($productoDetalle["lote"]) ? $productoDetalle["lote"] : "";
 
-            $stockActual = SucursalProducto::where([
+            $existeStock = SucursalProducto::where([
                                     "id_producto"=>$productoDetalle["id_producto"],
                                     "id_sucursal"=>$data["id_sucursal"],
                                     "precio_entrada"=>$productoDetalle["precio_unitario"],
                                     "lote"=>$lote,
                                     "fecha_vencimiento"=>$fechaVencimiento
                                 ])
-                                ->first(["id"]);
+                                ->exists();
+
+            //var_dump($existeStock, $productoDetalle, $lote, $fechaVencimiento);
 
             /*ACTUALIZAMOS SUCURSAL*/
-            if ($stockActual == null){
+            if (!$existeStock){
                 /*No existe sucursal_producto, deberíamos ingresar*/
                 $sucursalProducto = new SucursalProducto;
                 $sucursalProducto->id_sucursal = $data["id_sucursal"];

@@ -31,8 +31,9 @@ class ProductoController extends Controller
                 $q->on("um.id", "=", "pr.id_unidad_medida");
             })
             ->whereNull("pr.deleted_at")
-            ->select("pr.id", "pr.codigo_generado", "empresa_especial", "pr.nombre as producto", "pr.precio_unitario", "cp.nombre as categoria", "m.nombre as marca", "um.descripcion as unidad_medida")
+            ->select("pr.id", "pr.codigo_generado", "empresa_especial", "pr.nombre as producto", "pr.precio_unitario", "cp.nombre as categoria", "m.nombre as marca", "um.descripcion as unidad_medida", "tallas")
             ->addSelect(DB::raw("(SELECT CONCAT('".$baseRep."',img_url) FROM producto_imagens WHERE id_producto = pr.id ORDER BY numero_imagen DESC LIMIT 1) as img_url"))
+            ->orderBy("pr.nombre")
             ->get();
 
         return $productos;
@@ -120,6 +121,8 @@ class ProductoController extends Controller
         });
 
         $productos = Producto::with(["categoria"=> function($q){
+                            $q->select("id", "nombre");
+                        }, "marca"=>function($q){
                             $q->select("id", "nombre");
                         }])
                         ->whereIn("id", $collectionIds->toArray())

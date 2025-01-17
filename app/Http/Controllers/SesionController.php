@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\UsuarioResource;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -18,15 +19,15 @@ class SesionController extends Controller
 
         $user = User::where("numero_documento", $data["username"])->first();
         if (!$user){
-            throw new \Exception("Usuario no existe", 1);
+            abort(Response::HTTP_UNAUTHORIZED, "Usuario no existe");
         }
 
         if (!Hash::check($data["password"], $user->password)){
-            throw new \Exception("Contraseña incorrecta", 1);
+            abort(Response::HTTP_UNAUTHORIZED, "Contraseña incorrecta");
         }
 
         if ($user->estado_activo != 'A'){
-            throw new \Exception("Usuario no válido", 1);
+            abort(Response::HTTP_UNAUTHORIZED, "Usuario no válido");
         }
 
         $token = $user->createToken('andreitakidstoken', ['*'], now()->addWeek())->plainTextToken;

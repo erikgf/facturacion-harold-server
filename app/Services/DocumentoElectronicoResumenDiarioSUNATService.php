@@ -45,8 +45,41 @@ class DocumentoElectronicoResumenDiarioSUNATService {
         return ["resumenes"=>[$rd], "id_tipo_comprobante"=>$this->CODIGO_COMPROBANTE, "tipo_proceso"=> $empresa->modo_proceso_emision];
     }
 
+    public function obtenerDatosParaEnviarMasivo(string $fechaDesde, string $fechaHasta){
+        $rds =  DocumentoElectronicoResumenDiario::query()
+                    ->where([
+                        "fue_firmado"=>"1",
+                        "fue_generado"=>"1"
+                    ])
+                    ->whereBetween("fecha_emision", [$fechaDesde, $fechaHasta])
+                    ->whereNull("ticket")
+                    ->select(
+                        "id", "nombre_resumen as nombre_archivo", "fecha_emision"
+                    )
+                    ->get();
+
+        $empresa = EmpresaFacturacion::first([
+            "emisor_ruc as EMISOR_RUC",
+            "emisor_usuario_sol as EMISOR_USUARIO_SOL",
+            "emisor_pass_sol as EMISOR_PASS_SOL",
+            "modo_proceso_emision"
+        ]);
+
+        foreach ($rds as $rd) {
+            $rd->EMISOR_RUC = $empresa->EMISOR_RUC;
+            $rd->EMISOR_USUARIO_SOL = $empresa->EMISOR_USUARIO_SOL;
+            $rd->EMISOR_PASS_SOL = $empresa->EMISOR_PASS_SOL;
+        }
+
+        return ["resumenes"=>$rds->toArray(), "id_tipo_comprobante"=>$this->CODIGO_COMPROBANTE, "tipo_proceso"=> $empresa->modo_proceso_emision];
+    }
+
     public function enviarComprobante(string $id){
         $datosComprobante = $this->obtenerDatosParaEnviar($id);
+        return $this->enviarComprobantes($datosComprobante);
+    }
+
+    public function enviarComprobantes(mixed $datosComprobante){
         $data_json = json_encode($datosComprobante);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->RUTA_SISTEMA_FACTURACION_ENVIAR);
@@ -83,7 +116,7 @@ class DocumentoElectronicoResumenDiarioSUNATService {
 		$respuestasEnvio = json_decode($respuestasEnvioJSON);
 
         if ($respuestasEnvio){
-            foreach ($respuestasEnvio as $key => $respuesta) {
+            foreach ($respuestasEnvio as $respuesta) {
                 $ticket = NULL;
 
                 if (isset($respuesta->respuesta) && $respuesta->respuesta == "ok"){
@@ -140,8 +173,37 @@ class DocumentoElectronicoResumenDiarioSUNATService {
         return ["tickets"=>[$rd], "id_tipo_comprobante"=>$this->CODIGO_COMPROBANTE, "tipo_proceso"=> $empresa->modo_proceso_emision];
     }
 
+    public function obtenerDatosParaConsultarTicketMasivo(string $fechaDesde, string $fechaHasta){
+        $rds =  DocumentoElectronicoResumenDiario::query()
+                    ->whereBetween("fecha_emision", [$fechaDesde, $fechaHasta])
+                    ->whereNotNull("ticket")
+                    ->select(
+                        "id", "nombre_resumen", "fecha_emision", "ticket"
+                    )
+                    ->get();
+
+        $empresa = EmpresaFacturacion::first([
+            "emisor_ruc as EMISOR_RUC",
+            "emisor_usuario_sol as EMISOR_USUARIO_SOL",
+            "emisor_pass_sol as EMISOR_PASS_SOL",
+            "modo_proceso_emision"
+        ]);
+
+        foreach ($rds as $rd) {
+            $rd->EMISOR_RUC = $empresa->EMISOR_RUC;
+            $rd->EMISOR_USUARIO_SOL = $empresa->EMISOR_USUARIO_SOL;
+            $rd->EMISOR_PASS_SOL = $empresa->EMISOR_PASS_SOL;
+        }
+
+        return ["tickets"=>$rds->toArray(), "id_tipo_comprobante"=>$this->CODIGO_COMPROBANTE, "tipo_proceso"=> $empresa->modo_proceso_emision];
+    }
+
     public function consultarTicket(string $id){
         $datosComprobante = $this->obtenerDatosParaConsultarTicket($id);
+        return $this->consultarTickets($datosComprobante);
+    }
+
+    public function consultarTickets(mixed $datosComprobante){
         $data_json = json_encode($datosComprobante);
 
         $ch = curl_init();
