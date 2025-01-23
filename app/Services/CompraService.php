@@ -7,14 +7,23 @@ use App\Models\CompraDetalle;
 use App\Models\Producto;
 use App\Models\SucursalProducto;
 use App\Models\SucursalProductoHistorial;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CompraService {
 
     public function registrar(array $data){
-
         $compra = new Compra();
+        return $this->guardar($compra, $data);
+    }
 
+    public function editar(array $data, int $id){
+        $compra = Compra::findOrFail($id);
+        $this->revertirCompraAlmacen($compra);
+        return $this->guardar($compra, $data);
+    }
+
+    private function guardar(Compra $compra, $data) {
         $compra->numero_comprobante =  $data['numero_comprobante'];
         $compra->id_tipo_comprobante =  $data['id_tipo_comprobante'];
         $compra->id_proveedor =  $data['id_proveedor'];
@@ -36,11 +45,11 @@ class CompraService {
             $item = $i + 1;
             $objProducto = Producto::find($productoDetalle["id_producto"]);
             if (!$objProducto){
-                abort(Response::HTTP_NOT_FOUND, "Producto no existe en el sistema.");
+                throw ValidationException::withMessages(["Producto {$item} no existe en el sistema"]);
             }
 
             if ($productoDetalle["cantidad"] <= 0){
-                abort(Response::HTTP_UNPROCESSABLE_ENTITY, "Producto de la fila ".($item)." no tiene cantidad válida.");
+                throw ValidationException::withMessages(["Producto de la fila ".($item)." no tiene cantidad válida."]);
             }
 
             $fechaVencimiento = isset($productoDetalle["fecha_vencimiento"]) ? $productoDetalle["fecha_vencimiento"] : '0000-00-00';
@@ -106,6 +115,40 @@ class CompraService {
         return $compra;
     }
 
+    public function leer(int $id){
+        $compra = Compra::with([
+                    "sucursal"=>fn($q) =>  $q->select("id", "nombre"),
+                    "proveedor",
+                    "detalle"=>function($q){
+                        $q->leftJoin("sucursal_productos as sp", function($join){
+                            $join->on("sp.id_producto","=","compra_detalles.id");
+                            $join->on("sp.fecha_vencimiento", "=", "compra_detalles.fecha_vencimiento");
+                            $join->on("sp.lote", "=", "compra_detalles.lote");
+                        });
+                        $q->select("compra_detalles.id", "id_compra", "compra_detalles.id_producto","item", "cantidad",
+                                        "compra_detalles.fecha_vencimiento", "compra_detalles.lote", "precio_unitario",
+                                        "sp.stock",
+                                        DB::raw("(compra_detalles.cantidad * compra_detalles.precio_unitario) as subtotal"));
+                        $q->with([
+                            "producto"=>function($q){
+                                $q->select("id", "nombre","id_marca");
+                                $q->with([
+                                    "marca"
+                                ]);
+                            }]);
+                    }])
+                    ->select(
+                            "id",
+                            "id_tipo_comprobante", "numero_comprobante", "id_sucursal",
+                            "id_proveedor", "tipo_pago", "tipo_tarjeta",
+                            "importe_total", "fecha_compra", "hora_compra",
+                            "guias_remision", "observaciones"
+                            )
+                    ->findOrFail($id);
+
+        return $compra;
+    }
+
     public function anular(Compra $compra){
         /*
             ELIMINAR
@@ -124,9 +167,42 @@ class CompraService {
         }
 
         SucursalProductoHistorial::where(["id_compra"=>$compra->id])->delete();
+        $compra->detalle()->delete();
         $compra->delete();
 
         return $compra;
+    }
+
+    private function revertirCompraAlmacen(Compra $compra){
+        /*
+            1.- estos registros deben ser RETIRADOS del movimiento asociado a esta compra.
+            2.- se debe limpiar el detalle de la compra
+            3.- con compra se editará
+            4.- creará de nuevo el detalle y los comovimientos
+        */
+        $id_sucursal = $compra->id_sucursal;
+        $sucursalProductoHistorial = SucursalProductoHistorial::query()
+                                        ->where(["id_compra"=>$compra->id])
+                                        ->select("id","id_producto", "fecha_vencimiento", "lote", "cantidad")
+                                        ->get();
+
+        foreach ($sucursalProductoHistorial as $producto) {
+            SucursalProducto::where([
+                "id_producto" => $producto->id_producto,
+                "id_sucursal" => $id_sucursal,
+                "fecha_vencimiento"=>$producto->fecha_vencimiento,
+                "lote"=>$producto->lote,
+                "precio_entrada"=>$producto->precio_entrada
+            ])->decrement("stock", $producto->cantidad);
+        }
+
+        SucursalProductoHistorial::query()
+                                    ->where(["id_compra"=>$compra->id])
+                                    ->forceDelete();
+
+        CompraDetalle::query()
+                        ->where(["id_compra"=>$compra->id])
+                        ->forceDelete();
     }
 
 }

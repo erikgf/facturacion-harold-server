@@ -25,7 +25,7 @@ class VentaRequest extends FormRequest
         $requestArray = [
             "id_tipo_comprobante"=>"required|string|size:2",
             "serie"=>"required|string|size:4",
-            "id_cliente"=>"nullable|integer|exists:clientes,id",
+            "id_cliente"=>"nullable|integer|exists:clientes,id,deleted_at,NULL",
             "monto_efectivo"=>"required|numeric|max:".$this->input('importe_total'),
             "monto_tarjeta"=>"required|numeric|max:9999999",
             "monto_credito"=>"required|numeric|max:9999999",
@@ -34,9 +34,9 @@ class VentaRequest extends FormRequest
             "monto_transferencia"=>"required|numeric|max:9999999",
             "descuento_global"=>"required|numeric|max:9999999",
             "observaciones"=>"nullable|string",
-            "id_sucursal"=>"required|integer",
+            "id_sucursal"=>"required|integer|exists:sucursals,id,deleted_at,NULL",
             "fecha_venta"=>"required|date",
-            "hora_venta"=>"required|string|size:5",
+            "hora_venta"=>"required|string",
             "importe_total"=>"required|numeric|min:1|max:99999999",
             "productos"=>"required|array",
             "productos.*.id_producto"=>"required|integer",
@@ -62,12 +62,12 @@ class VentaRequest extends FormRequest
         if ($this->input('id_cliente') === NULL){
             $requestArray = array_merge($requestArray, [
                 "cliente_id_tipo_documento"=>"required|string|size:1",
-                "cliente_numero_documento"=>($this->input('cliente_id_tipo_documento') == "0" ? "required" : "nullable")."|string|max:15",
+                "cliente_numero_documento"=>($this->input('cliente_id_tipo_documento') == "0"  ? "required" : "nullable")."|string|max:".($this->input("id_tipo_documento") == "1" ? "8" : "11"),
                 "cliente_nombres"=>"required|string|max:300",
                 "cliente_apellidos"=>"nullable|string|max:300",
                 "cliente_direccion"=>"nullable|string|max:400",
-                "cliente_celular"=>"nullable|string|max:10",
-                "cliente_correo"=>"nullable|string|max:50",
+                "cliente_celular"=>"nullable|string|max:10|unique:clientes,celular",
+                "cliente_correo"=>"nullable|string|max:100|unique:clientes,correo",
             ]);
         }
 

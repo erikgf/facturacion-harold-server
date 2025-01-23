@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Permiso;
 use App\Models\PermisoRol;
 use App\Models\Rol;
+use Illuminate\Support\Facades\Cache;
 
 class PermisoRolService {
 
@@ -19,6 +20,10 @@ class PermisoRolService {
         $permisoRol->estado = 'A';
 
         $permisoRol->save();
+
+        $cacheKey = "cache_permisos_{$idRol}";
+        Cache::forget($cacheKey);
+
         return $permiso;
     }
 
@@ -27,6 +32,9 @@ class PermisoRolService {
         $permiso = Permiso::findOrFail($idPermiso);
         $permisoRol = PermisoRol::where(["id_rol"=>$idRol, "id_permiso"=>$idPermiso])->first();
         $permisoRol->forceDelete();
+
+        $cacheKey = "cache_permisos_{$idRol}";
+        Cache::forget($cacheKey);
 
         return $permiso;
     }

@@ -12,11 +12,10 @@ class AlmacenController extends Controller
     public function getProductosStockPorSucursal(string $idSucursal)
     {
         return SucursalProducto::with(["producto" => function($query){
-                $query->select("id", "nombre", "id_categoria_producto");
+                $query->select("id", "nombre", "id_categoria_producto", "id_marca");
                 $query->with([
-                    "categoria"=> function($query){
-                        $query->select("id", "nombre","id_tipo_categoria");
-                    }
+                    "marca"=>fn($q) => $q->select("id", "nombre"),
+                    "categoria"=> fn($q) => $q->select("id", "nombre","id_tipo_categoria")
                 ]);
                 $query->orderBy("nombre");
             }])

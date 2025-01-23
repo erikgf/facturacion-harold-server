@@ -31,7 +31,7 @@ class CompraRequest extends FormRequest
             "guias_remision"=>"nullable|string",
             "id_sucursal"=>"required|integer",
             "fecha_compra"=>"required|date",
-            "hora_compra"=>"required|string|size:5",
+            "hora_compra"=>"required|string",
             "importe_total"=>"required|numeric",
             "productos"=>"required|array",
             "productos.*.id_producto"=>"required|integer",

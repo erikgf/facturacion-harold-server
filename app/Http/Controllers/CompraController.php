@@ -46,24 +46,19 @@ class CompraController extends Controller
         return $compra;
     }
 
+    public function update(CompraRequest $request, int $id){
+        $data = $request->validated();
+        $data["id_usuario_registro"] = auth()->user()->id;
+        DB::beginTransaction();
+        $compra = (new CompraService)->editar($data, $id);
+        DB::commit();
+
+        return $compra;
+    }
+
     public function show(string $id)
     {
-         $compra = Compra::with(["proveedor"=>function($q){
-                        $q->select("id", "numero_documento","razon_social");
-                    }, "detalle"=>function($q){
-                        $q->select("id", "id_compra", "id_producto","item", "cantidad", "precio_unitario", DB::raw("(cantidad * precio_unitario) as subtotal"));
-                        $q->with(["producto"=>function($q){
-                            $q->select("id", "nombre");
-                        }]);
-                    }])
-                ->select(
-                        "id",
-                        "id_tipo_comprobante", "numero_comprobante",
-                        "id_proveedor", "tipo_pago", "tipo_tarjeta",
-                        "importe_total", "fecha_compra", "hora_compra"
-                        )
-                ->findOrFail($id);
-
+        $compra = (new CompraService)->leer($id);
         return $compra;
     }
 

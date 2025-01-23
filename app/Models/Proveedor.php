@@ -10,6 +10,12 @@ class Proveedor extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ];
+
     protected $fillable = [
         "id_tipo_documento", "numero_documento", "razon_social", "direccion", "correo"
     ];

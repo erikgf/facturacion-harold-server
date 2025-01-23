@@ -8,12 +8,13 @@ use Illuminate\Http\Request;
 class SerieDocumentoController extends Controller
 {
     public function index(){
-        return SerieDocumento::with(["tipoComprobante"=>function($q){
-            $q->select("id", "nombre");
-        }])
-        ->get([
-            "id", "serie", "correlativo", "id_tipo_comprobante"
-        ]);
+        return SerieDocumento::with([
+                "tipoComprobante"=>fn($q) => $q->select("id", "nombre"),
+                "sucursal"=>fn($q) => $q->select("id", "nombre")
+            ])
+            ->get([
+                "id", "serie", "correlativo", "id_tipo_comprobante", "id_sucursal"
+            ]);
     }
 
     public function store(Request $request){
@@ -21,6 +22,7 @@ class SerieDocumentoController extends Controller
             "id_tipo_comprobante"=>"required|string|size:2",
             "serie"=> "required|string|size:4",
             "correlativo"=>"required|integer",
+            "id_sucursal"=>"required|integer|exists:sucursals,id,deleted_at,NULL"
         ]);
 
         $serieDoc = new SerieDocumento();
@@ -28,6 +30,7 @@ class SerieDocumentoController extends Controller
         $serieDoc->id_tipo_comprobante = $data["id_tipo_comprobante"];
         $serieDoc->serie = $data["serie"];
         $serieDoc->correlativo = $data["correlativo"];
+        $serieDoc->id_sucursal = $data["id_sucursal"];
 
         $serieDoc->save();
 
@@ -35,9 +38,10 @@ class SerieDocumentoController extends Controller
     }
 
     public function show(string $id){
-        return SerieDocumento::findOrFail($id, [
-                "id", "serie", "correlativo", "id_tipo_comprobante"
-            ]);
+        return SerieDocumento::query()
+                    ->findOrFail($id, [
+                        "id", "serie", "correlativo", "id_tipo_comprobante","id_sucursal"
+                    ]);
     }
 
     public function update(Request $request, string $id){
@@ -47,6 +51,7 @@ class SerieDocumentoController extends Controller
             "id_tipo_comprobante"=>"required|string|size:2",
             "serie"=> "required|string|size:4",
             "correlativo"=>"required|integer",
+            "id_sucursal"=>"required|integer|exists:sucursals,id,deleted_at,NULL"
         ]);
 
         $serieDoc->update($data);
@@ -64,7 +69,7 @@ class SerieDocumentoController extends Controller
         return SerieDocumento::where([
             "id_tipo_comprobante"=>$id
         ])->get([
-            "serie", "correlativo"
+            "serie", "correlativo", "id_sucursal"
         ]);
     }
 }

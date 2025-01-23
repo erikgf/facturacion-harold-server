@@ -10,6 +10,12 @@ class Venta extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ];
+
     public function cliente(){
         return $this->hasOne(Cliente::class, "id", "id_cliente");
     }

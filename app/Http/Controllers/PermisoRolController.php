@@ -6,6 +6,7 @@ use App\Models\Permiso;
 use App\Models\PermisoRol;
 use App\Models\Rol;
 use App\Services\PermisoRolService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -73,10 +74,18 @@ class PermisoRolController extends Controller
         $usuario = $request->user();
 
         if (!$usuario){
-            abort(Response::HTTP_UNAUTHORIZED, "No hay usuario válido");
+            throw new AuthorizationException('No hay usuario válido');
         }
 
         $idRol = $usuario->id_rol;
+
+        $cacheKey = "cache_permisos_{$idRol}";
+
+        $permisoMenu = cache($cacheKey);
+
+        if ($permisoMenu){
+            return $permisoMenu;
+        }
 
         $rol = Rol::with(["permisos"=>function($q){
             $q->select("id");
@@ -88,7 +97,7 @@ class PermisoRolController extends Controller
 
         $permisoMenu = [];
 
-        foreach ($rol->permisos as $key => $permisoPadre) {
+        foreach ($rol->permisos as $permisoPadre) {
             $permiso = Permiso::with(["hijos"=>function($q) use ($idRol){
                             $q->join("permiso_rols as pr", "pr.id_permiso", "=", "id");
                             $q->select("id", "es_menu_interfaz", "titulo_interfaz", "url", "icono_interfaz", "id_permiso_padre");
@@ -100,6 +109,7 @@ class PermisoRolController extends Controller
             array_push($permisoMenu, $permiso);
         }
 
+        cache([ $cacheKey => $permisoMenu], now()->addMinutes(60));
         return $permisoMenu;
     }
 }

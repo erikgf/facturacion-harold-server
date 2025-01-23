@@ -16,6 +16,12 @@ class Producto extends Model
         'numero_imagen_principal'
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ];
+
     public function imagenes(){
         return $this->hasMany(ProductoImagen::class, 'id_producto');
     }

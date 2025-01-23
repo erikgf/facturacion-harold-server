@@ -10,10 +10,14 @@ class SerieDocumento extends Model
 {
     use HasFactory, SoftDeletes;
     protected $fillable = [
-        "id_tipo_comprobante", "serie", "correlativo"
+        "id_tipo_comprobante", "serie", "correlativo", "id_sucursal"
     ];
 
     public function tipoComprobante(){
         return $this->hasOne(TipoComprobante::class, "id" , "id_tipo_comprobante");
+    }
+
+    public function sucursal(){
+        return $this->hasOne(Sucursal::class, "id" , "id_sucursal");
     }
 }
