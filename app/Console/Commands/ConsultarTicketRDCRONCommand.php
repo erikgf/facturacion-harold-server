@@ -28,8 +28,7 @@ class ConsultarTicketRDCRONCommand extends Command
     public function handle()
     {
         $fechaDesde = Carbon::now()->startOfWeek()->toDateString();
-        //$fechaHasta = Carbon::now()->endOfWeek()->toDateString();
-        $fechaHasta = "2025-02-05";
+        $fechaHasta = Carbon::now()->endOfWeek()->toDateString();
 
         $rdSunatService = new DocumentoElectronicoResumenDiarioSUNATService;
         $datosParaConsultar = $rdSunatService->obtenerDatosParaConsultarTicketMasivo($fechaDesde, $fechaHasta);

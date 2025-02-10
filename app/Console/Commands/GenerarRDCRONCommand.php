@@ -29,8 +29,7 @@ class GenerarRDCRONCommand extends Command
     {
         $status = "1";
         $fechaDesde = Carbon::now()->startOfWeek()->toDateString();
-        //$fechaHasta = Carbon::now()->endOfWeek()->toDateString();
-        $fechaHasta = "2025-02-05";
+        $fechaHasta = Carbon::now()->endOfWeek()->toDateString();
 
         $res = (new DocumentoElectronicoResumenDiarioMasivoService)->procesar($fechaDesde, $fechaHasta, $status);
         $jsonRes = json_encode($res);

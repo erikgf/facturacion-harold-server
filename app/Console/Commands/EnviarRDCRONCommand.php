@@ -29,7 +29,7 @@ class EnviarRDCRONCommand extends Command
     {
 
         $fechaDesde = Carbon::now()->startOfWeek()->toDateString();
-        $fechaHasta = "2025-02-05";//Carbon::now()->endOfWeek()->toDateString();
+        $fechaHasta = Carbon::now()->endOfWeek()->toDateString();
 
         $rdSunatService = new DocumentoElectronicoResumenDiarioSUNATService;
         $datosParaEnviar = $rdSunatService->obtenerDatosParaEnviarMasivo($fechaDesde, $fechaHasta);
