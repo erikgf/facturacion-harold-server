@@ -200,4 +200,30 @@ class DocumentoElectronicoService {
         $doc->delete();
         return $doc;
     }
+
+    public function obtenerComprobantesGenerarPorFecha(string $fecha, string $idTipoComprobante){
+        return DocumentoElectronico::query()
+                    ->where([
+                        "fecha_emision"=>$fecha,
+                        "id_tipo_comprobante"=>$idTipoComprobante,
+                        "id_tipo_documento_cliente"=>"6",
+                        "fue_generado"=>"0",
+                        "fue_firmado"=>"0"
+                    ])
+                    ->whereNull("cdr_estado")
+                    ->get("id");
+    }
+
+    public function obtenerComprobantesEnviarPorFecha(string $fecha, string $idTipoComprobante){
+        return DocumentoElectronico::query()
+                    ->where([
+                        "fecha_emision"=>$fecha,
+                        "id_tipo_comprobante"=>$idTipoComprobante,
+                        "id_tipo_documento_cliente"=>"6",
+                        "fue_generado"=>"1",
+                        "fue_firmado"=>"1"
+                    ])
+                    ->whereNull("cdr_estado")
+                    ->get("id");
+    }
 }

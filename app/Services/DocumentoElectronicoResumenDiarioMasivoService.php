@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DocumentoElectronicoResumenDiario;
 use App\Models\EmpresaFacturacion;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -12,8 +13,8 @@ class DocumentoElectronicoResumenDiarioMasivoService {
     public function procesar(string $fechaDesde, string $fechaHasta, string $status){
 
             // Convert to Carbon instances for easier manipulation
-        $start = \Carbon\Carbon::parse($fechaDesde);
-        $end = \Carbon\Carbon::parse($fechaHasta);
+        $start = Carbon::parse($fechaDesde);
+        $end = Carbon::parse($fechaHasta);
 
         // Ensure the start date is not after the end date
         if ($start->gt($end)) {
@@ -60,4 +61,5 @@ class DocumentoElectronicoResumenDiarioMasivoService {
 
         return $arregloFechasProcesadasCorrectamente;
     }
+
 }
