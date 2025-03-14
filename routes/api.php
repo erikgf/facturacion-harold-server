@@ -35,6 +35,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post("sesion/iniciar", [SesionController::class, "login"]);
+Route::get("productos-catalogo", [ProductoController::class, "obtenerProductosCatalogo"]);
+Route::get("productos-catalogo/{id}", [ProductoController::class, "obtenerProductoCatalogoInformacion"]);
+Route::get("productos-catalogo-util", [ProductoController::class, "obtenerProductoCatalogoUtils"]);
 
 Route::group(["middleware"=>['auth:sanctum']], function(){
     Route::apiResource("tipo-comprobantes", TipoComprobanteController::class);
@@ -49,6 +52,7 @@ Route::group(["middleware"=>['auth:sanctum']], function(){
     Route::apiResource("sucursales", SucursalController::class);
     Route::apiResource("usuarios", UsuarioController::class);
     Route::apiResource("productos", ProductoController::class);
+
     Route::apiResource("serie-documentos", SerieDocumentoController::class);
     Route::get("tipo-comprobantes/{id}/series", [SerieDocumentoController::class, "getSeriePorTipoComprobante"]);
 

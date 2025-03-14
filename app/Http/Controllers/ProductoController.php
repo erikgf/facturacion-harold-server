@@ -18,25 +18,7 @@ class ProductoController extends Controller
      */
     public function index()
     {
-        $baseRep = asset('');
-
-        $productos = DB::table("productos as pr")
-            ->join("categoria_productos as cp", function($q){
-                $q->on("cp.id", "=", "pr.id_categoria_producto");
-            })
-            ->join("marcas as m", function($q){
-                $q->on("m.id", "=", "pr.id_marca");
-            })
-            ->join("unidad_medidas as um", function($q){
-                $q->on("um.id", "=", "pr.id_unidad_medida");
-            })
-            ->whereNull("pr.deleted_at")
-            ->select("pr.id", "pr.codigo_generado", "empresa_especial", "pr.nombre as producto", "pr.precio_unitario", "cp.nombre as categoria", "m.nombre as marca", "um.descripcion as unidad_medida", "tallas")
-            ->addSelect(DB::raw("(SELECT CONCAT('".$baseRep."',img_url) FROM producto_imagens WHERE id_producto = pr.id ORDER BY numero_imagen DESC LIMIT 1) as img_url"))
-            ->orderBy("pr.nombre")
-            ->get();
-
-        return $productos;
+        return (new ProductoService)->listar();
 
     }
 
@@ -138,4 +120,31 @@ class ProductoController extends Controller
 
         return $productos;
     }
+
+    public function obtenerProductosCatalogo(Request $request){
+        $data = $request->validate([
+            "id_categoria"=>"nullable|integer",
+            "id_tipo_categoria"=>"nullable|integer",
+            "id_marca" => "nullable|integer",
+            "q" => "nullable|string|max:300",
+            "page"=>"nullable|integer"
+        ]);
+
+        return (new ProductoService)->obtenerProductosCatalogo(
+            pagina : @$data["page"],
+            cadenaBusqueda: @$data["q"],
+            idCategoria: @$data["id_categoria"],
+            idTipoCategoria: @$data["id_tipo_categoria"],
+            idMarca: @$data["id_marca"]
+        );
+    }
+
+    public function obtenerProductoCatalogoInformacion(int $id){
+        return (new ProductoService)->obtenerProductoCatalogoInformacion($id);
+    }
+
+    public function obtenerProductoCatalogoUtils(){
+        return (new ProductoService)->obtenerProductoCatalogoUtils();
+    }
+
 }
